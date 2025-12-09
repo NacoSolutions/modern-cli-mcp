@@ -2,7 +2,7 @@
 target/
 result
 result-*
-dist/
+# Note: dist/ is NOT ignored - it contains pre-built Nix closure for Docker
 
 # Git
 .git/
