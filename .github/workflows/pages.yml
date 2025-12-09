@@ -19,39 +19,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-
-      - name: Install dependencies
-        working-directory: website
-        run: bun install
-
-      - name: Generate static site
-        working-directory: website
-        run: |
-          # Start server in background
-          bun run src/index.ts &
-          SERVER_PID=$!
-          sleep 2
-
-          # Create dist directory
-          mkdir -p dist
-
-          # Fetch pages and save as static HTML
-          curl -s http://localhost:3000/ > dist/index.html
-          curl -s http://localhost:3000/tools > dist/tools.html
-          curl -s http://localhost:3000/docs > dist/docs.html
-
-          # Copy static assets
-          cp -r public dist/
-
-          # Kill server
-          kill $SERVER_PID
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -59,15 +33,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: website/dist
+          path: website/
 
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tools - Modern CLI MCP</title>
+  <meta name="description" content="70+ CLI tools available in Modern CLI MCP">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@unocss/reset/tailwind.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <script src="https://unpkg.com/hyperscript.org@0.9.14"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+  <nav class="bg-gray-800 border-b border-gray-700">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="flex items-center justify-between h-16">
+        <a href="index.html" class="text-xl font-bold text-cyan-400">Modern CLI MCP</a>
+        <div class="flex gap-6">
+          <a href="index.html" class="hover:text-cyan-400 transition">Home</a>
+          <a href="tools.html" class="text-cyan-400">Tools</a>
+          <a href="docs.html" class="hover:text-cyan-400 transition">Docs</a>
+          <a href="https://github.com/hellst0rm/modern-cli-mcp" class="hover:text-cyan-400 transition" target="_blank">GitHub</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-4">Available Tools</h1>
+    <p class="text-gray-400 mb-8">70+ tools organized by category. Most tools support JSON output for AI/LLM consumption.</p>
+
+    <div class="mb-6">
+      <input type="text"
+             placeholder="Filter tools..."
+             class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 w-full max-w-md focus:border-cyan-400 focus:outline-none"
+             _="on input
+                set query to my value.toLowerCase()
+                for tool in <.tool-tag/>
+                  if tool.textContent.toLowerCase().contains(query)
+                    remove .hidden from tool
+                  else
+                    add .hidden to tool
+                end">
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="bg-gray-800 p-6 rounded-lg">
+        <h3 class="text-xl font-semibold mb-4 text-cyan-400">Filesystem</h3>
+        <div class="flex flex-wrap gap-2">
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">eza</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">bat</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">fd</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">duf</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">dust</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">trash_put</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">trash_list</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">trash_restore</span>
+        </div>
+      </div>
+
+      <div class="bg-gray-800 p-6 rounded-lg">
+        <h3 class="text-xl font-semibold mb-4 text-cyan-400">Search</h3>
+        <div class="flex flex-wrap gap-2">
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">rg</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">fzf_filter</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">ast_grep</span>
+        </div>
+      </div>
+
+      <div class="bg-gray-800 p-6 rounded-lg">
+        <h3 class="text-xl font-semibold mb-4 text-cyan-400">Git Forges</h3>
+        <div class="flex flex-wrap gap-2">
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">gh_repo</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">gh_issue</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">gh_pr</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">gh_search</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">gh_release</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">gh_workflow</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">gh_run</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">gh_api</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">glab_issue</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">glab_mr</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">glab_pipeline</span>
+        </div>
+      </div>
+
+      <div class="bg-gray-800 p-6 rounded-lg">
+        <h3 class="text-xl font-semibold mb-4 text-cyan-400">Containers</h3>
+        <div class="flex flex-wrap gap-2">
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">podman</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">dive</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">skopeo</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">crane</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">trivy</span>
+        </div>
+      </div>
+
+      <div class="bg-gray-800 p-6 rounded-lg">
+        <h3 class="text-xl font-semibold mb-4 text-cyan-400">Kubernetes</h3>
+        <div class="flex flex-wrap gap-2">
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">kubectl_get</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">kubectl_describe</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">kubectl_logs</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">kubectl_apply</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">kubectl_delete</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">kubectl_exec</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">stern</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">helm</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">kustomize</span>
+        </div>
+      </div>
+
+      <div class="bg-gray-800 p-6 rounded-lg">
+        <h3 class="text-xl font-semibold mb-4 text-cyan-400">Data Transform</h3>
+        <div class="flex flex-wrap gap-2">
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">jq</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">yq</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">gron</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">htmlq</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">pup</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">miller</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">dasel</span>
+        </div>
+      </div>
+
+      <div class="bg-gray-800 p-6 rounded-lg">
+        <h3 class="text-xl font-semibold mb-4 text-cyan-400">Network</h3>
+        <div class="flex flex-wrap gap-2">
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">http</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">dns</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">usql</span>
+        </div>
+      </div>
+
+      <div class="bg-gray-800 p-6 rounded-lg">
+        <h3 class="text-xl font-semibold mb-4 text-cyan-400">System</h3>
+        <div class="flex flex-wrap gap-2">
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">procs</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">tokei</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">hyperfine</span>
+        </div>
+      </div>
+
+      <div class="bg-gray-800 p-6 rounded-lg">
+        <h3 class="text-xl font-semibold mb-4 text-cyan-400">Diff/Git</h3>
+        <div class="flex flex-wrap gap-2">
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">delta</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">difft</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">git_diff</span>
+        </div>
+      </div>
+
+      <div class="bg-gray-800 p-6 rounded-lg">
+        <h3 class="text-xl font-semibold mb-4 text-cyan-400">Utilities</h3>
+        <div class="flex flex-wrap gap-2">
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">tldr</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">grex</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">ouch_compress</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">ouch_decompress</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">ouch_list</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">pueue_add</span>
+          <span class="tool-tag bg-gray-700 px-3 py-1 rounded text-sm">pueue_status</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-gray-800 border-t border-gray-700 mt-16 py-8">
+    <div class="max-w-6xl mx-auto px-4 text-center text-gray-400">
+      <p>MIT License &middot; <a href="https://github.com/hellst0rm/modern-cli-mcp" class="hover:text-cyan-400">GitHub</a></p>
+    </div>
+  </footer>
+</body>
+</html>

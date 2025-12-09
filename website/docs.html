@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documentation - Modern CLI MCP</title>
+  <meta name="description" content="How to install and configure Modern CLI MCP">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@unocss/reset/tailwind.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <script src="https://unpkg.com/hyperscript.org@0.9.14"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+  <nav class="bg-gray-800 border-b border-gray-700">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="flex items-center justify-between h-16">
+        <a href="index.html" class="text-xl font-bold text-cyan-400">Modern CLI MCP</a>
+        <div class="flex gap-6">
+          <a href="index.html" class="hover:text-cyan-400 transition">Home</a>
+          <a href="tools.html" class="hover:text-cyan-400 transition">Tools</a>
+          <a href="docs.html" class="text-cyan-400">Docs</a>
+          <a href="https://github.com/hellst0rm/modern-cli-mcp" class="hover:text-cyan-400 transition" target="_blank">GitHub</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8">Documentation</h1>
+
+    <nav class="mb-12 p-4 bg-gray-800 rounded-lg">
+      <h2 class="text-sm font-semibold text-gray-400 mb-2">On this page</h2>
+      <ul class="space-y-1">
+        <li><a href="#installation" class="hover:text-cyan-400">Installation</a></li>
+        <li><a href="#configuration" class="hover:text-cyan-400">Configuration</a></li>
+        <li><a href="#usage" class="hover:text-cyan-400">Usage</a></li>
+        <li><a href="#environment" class="hover:text-cyan-400">Environment Variables</a></li>
+      </ul>
+    </nav>
+
+    <section id="installation" class="mb-12">
+      <h2 class="text-2xl font-semibold mb-6 text-cyan-400">Installation</h2>
+
+      <div class="space-y-6">
+        <div>
+          <h3 class="text-xl font-semibold mb-2">Nix (Recommended)</h3>
+          <p class="text-gray-400 mb-3">Run directly without installation:</p>
+          <pre class="bg-gray-800 p-4 rounded overflow-x-auto"><code>nix run github:hellst0rm/modern-cli-mcp</code></pre>
+          <p class="text-gray-400 mt-3 mb-3">Or install to your profile:</p>
+          <pre class="bg-gray-800 p-4 rounded overflow-x-auto"><code>nix profile install github:hellst0rm/modern-cli-mcp</code></pre>
+        </div>
+
+        <div>
+          <h3 class="text-xl font-semibold mb-2">FlakeHub</h3>
+          <p class="text-gray-400 mb-3">Add to your flake inputs:</p>
+          <pre class="bg-gray-800 p-4 rounded overflow-x-auto"><code>fh add hellst0rm/modern-cli-mcp</code></pre>
+        </div>
+
+        <div>
+          <h3 class="text-xl font-semibold mb-2">Docker</h3>
+          <pre class="bg-gray-800 p-4 rounded overflow-x-auto"><code>docker pull ghcr.io/hellst0rm/modern-cli-mcp
+docker run --rm -i ghcr.io/hellst0rm/modern-cli-mcp</code></pre>
+        </div>
+
+        <div>
+          <h3 class="text-xl font-semibold mb-2">From Source (Cargo)</h3>
+          <p class="text-gray-400 mb-3">Requires CLI tools to be installed separately:</p>
+          <pre class="bg-gray-800 p-4 rounded overflow-x-auto"><code>cargo install --git https://github.com/hellst0rm/modern-cli-mcp</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="configuration" class="mb-12">
+      <h2 class="text-2xl font-semibold mb-6 text-cyan-400">Configuration</h2>
+
+      <h3 class="text-xl font-semibold mb-2">Claude Desktop</h3>
+      <p class="text-gray-400 mb-3">Add to <code class="bg-gray-800 px-2 py-1 rounded">~/.config/claude/claude_desktop_config.json</code>:</p>
+      <pre class="bg-gray-800 p-4 rounded overflow-x-auto"><code class="text-cyan-300">{
+  "mcpServers": {
+    "modern-cli": {
+      "command": "nix",
+      "args": ["run", "github:hellst0rm/modern-cli-mcp", "--"]
+    }
+  }
+}</code></pre>
+
+      <h3 class="text-xl font-semibold mb-2 mt-6">Claude Code</h3>
+      <p class="text-gray-400 mb-3">Add to <code class="bg-gray-800 px-2 py-1 rounded">~/.config/claude-code/settings.json</code>:</p>
+      <pre class="bg-gray-800 p-4 rounded overflow-x-auto"><code class="text-cyan-300">{
+  "mcpServers": {
+    "modern-cli": {
+      "command": "nix",
+      "args": ["run", "github:hellst0rm/modern-cli-mcp", "--"]
+    }
+  }
+}</code></pre>
+
+      <h3 class="text-xl font-semibold mb-2 mt-6">Docker Configuration</h3>
+      <pre class="bg-gray-800 p-4 rounded overflow-x-auto"><code class="text-cyan-300">{
+  "mcpServers": {
+    "modern-cli": {
+      "command": "docker",
+      "args": ["run", "--rm", "-i", "ghcr.io/hellst0rm/modern-cli-mcp"]
+    }
+  }
+}</code></pre>
+    </section>
+
+    <section id="usage" class="mb-12">
+      <h2 class="text-2xl font-semibold mb-6 text-cyan-400">Usage</h2>
+
+      <p class="text-gray-400 mb-4">Once configured, the tools are available to your AI assistant. Example prompts:</p>
+
+      <div class="space-y-4">
+        <div class="bg-gray-800 p-4 rounded">
+          <p class="text-gray-300 mb-2">"List files in the current directory with git status"</p>
+          <p class="text-gray-500 text-sm">Uses: <code>eza</code></p>
+        </div>
+        <div class="bg-gray-800 p-4 rounded">
+          <p class="text-gray-300 mb-2">"Search for TODO comments in all Rust files"</p>
+          <p class="text-gray-500 text-sm">Uses: <code>rg</code></p>
+        </div>
+        <div class="bg-gray-800 p-4 rounded">
+          <p class="text-gray-300 mb-2">"Show my open GitHub issues"</p>
+          <p class="text-gray-500 text-sm">Uses: <code>gh_issue</code></p>
+        </div>
+        <div class="bg-gray-800 p-4 rounded">
+          <p class="text-gray-300 mb-2">"Get all pods in the production namespace"</p>
+          <p class="text-gray-500 text-sm">Uses: <code>kubectl_get</code></p>
+        </div>
+      </div>
+    </section>
+
+    <section id="environment" class="mb-12">
+      <h2 class="text-2xl font-semibold mb-6 text-cyan-400">Environment Variables</h2>
+
+      <table class="w-full bg-gray-800 rounded-lg overflow-hidden">
+        <thead class="bg-gray-700">
+          <tr>
+            <th class="px-4 py-3 text-left">Variable</th>
+            <th class="px-4 py-3 text-left">Description</th>
+            <th class="px-4 py-3 text-left">Default</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-t border-gray-700">
+            <td class="px-4 py-3"><code>RUST_LOG</code></td>
+            <td class="px-4 py-3 text-gray-400">Logging level</td>
+            <td class="px-4 py-3 text-gray-400">info</td>
+          </tr>
+          <tr class="border-t border-gray-700">
+            <td class="px-4 py-3"><code>GITHUB_TOKEN</code></td>
+            <td class="px-4 py-3 text-gray-400">For GitHub CLI tools</td>
+            <td class="px-4 py-3 text-gray-400">-</td>
+          </tr>
+          <tr class="border-t border-gray-700">
+            <td class="px-4 py-3"><code>GITLAB_TOKEN</code></td>
+            <td class="px-4 py-3 text-gray-400">For GitLab CLI tools</td>
+            <td class="px-4 py-3 text-gray-400">-</td>
+          </tr>
+          <tr class="border-t border-gray-700">
+            <td class="px-4 py-3"><code>KUBECONFIG</code></td>
+            <td class="px-4 py-3 text-gray-400">Kubernetes config path</td>
+            <td class="px-4 py-3 text-gray-400">~/.kube/config</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer class="bg-gray-800 border-t border-gray-700 mt-16 py-8">
+    <div class="max-w-6xl mx-auto px-4 text-center text-gray-400">
+      <p>MIT License &middot; <a href="https://github.com/hellst0rm/modern-cli-mcp" class="hover:text-cyan-400">GitHub</a></p>
+    </div>
+  </footer>
+</body>
+</html>
