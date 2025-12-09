@@ -1,0 +1,29 @@
+# Build outputs
+target/
+result
+result-*
+
+# Git
+.git/
+.gitignore
+
+# IDE/Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Nix
+.direnv/
+
+# Documentation (not needed in image)
+*.md
+!README.md
+
+# CI/CD
+.github/
+
+# Local config
+.envrc.local
+.mcp.json
