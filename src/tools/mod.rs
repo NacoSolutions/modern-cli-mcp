@@ -1643,7 +1643,7 @@ impl ModernCliTools {
         // Split input by newlines or commas
         let inputs: Vec<&str> = req
             .input
-            .split(|c| c == '\n' || c == ',')
+            .split(['\n', ','])
             .map(|s| s.trim())
             .filter(|s| !s.is_empty())
             .collect();

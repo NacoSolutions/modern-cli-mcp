@@ -116,7 +116,7 @@ impl CommandOutput {
             }
             if !self.stdout.is_empty() {
                 if !result.is_empty() {
-                    result.push_str("\n");
+                    result.push('\n');
                 }
                 result.push_str(&self.stdout);
             }
