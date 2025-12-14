@@ -1,5 +1,6 @@
 // modern-cli-mcp/src/main.rs
 mod groups;
+mod ignore;
 mod state;
 mod tools;
 

@@ -44,6 +44,8 @@ tempfile = "3.14"
 regex = "1.11"
 sysinfo = "0.33"
 clap = { version = "4.5", features = ["derive"] }
+ignore = "0.4"
+parking_lot = "0.12"
 
 [profile.release]
 lto = true

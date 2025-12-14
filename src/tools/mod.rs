@@ -7,6 +7,7 @@ pub use executor::{
 };
 
 use crate::groups::{AgentProfile, ToolGroup};
+use crate::ignore::AgentIgnore;
 use crate::state::{ContextScope, StateManager, TaskStatus};
 use rmcp::{
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
@@ -22,6 +23,7 @@ pub struct ModernCliTools {
     executor: CommandExecutor,
     state: Arc<StateManager>,
     profile: Option<AgentProfile>,
+    ignore: Arc<AgentIgnore>,
 }
 
 // ============================================================================
@@ -104,6 +106,8 @@ pub struct FdRequest {
     pub size: Option<String>,
     #[schemars(description = "Modification time filter (e.g., '-1d', '+1w')")]
     pub changed_within: Option<String>,
+    #[schemars(description = "Maximum number of results to return")]
+    pub max_results: Option<u32>,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -1077,8 +1081,10 @@ pub struct RipgrepRequest {
     pub word: Option<bool>,
     #[schemars(description = "Invert match (show non-matching lines)")]
     pub invert: Option<bool>,
-    #[schemars(description = "Maximum number of results")]
+    #[schemars(description = "Maximum matches per file")]
     pub max_count: Option<u32>,
+    #[schemars(description = "Maximum total results to return")]
+    pub max_results: Option<u32>,
     #[schemars(description = "Follow symlinks")]
     pub follow: Option<bool>,
     #[schemars(description = "Multiline mode")]
@@ -2321,11 +2327,13 @@ pub struct ExpandToolsRequest {
 impl ModernCliTools {
     pub fn new(profile: Option<AgentProfile>) -> Self {
         let state = StateManager::new().expect("Failed to initialize state manager");
+        let ignore = AgentIgnore::new().unwrap_or_default();
         Self {
             tool_router: Self::tool_router(),
             executor: CommandExecutor::new(),
             state: Arc::new(state),
             profile,
+            ignore: Arc::new(ignore),
         }
     }
 
@@ -2342,6 +2350,12 @@ impl ModernCliTools {
         &self,
         Parameters(req): Parameters<EzaRequest>,
     ) -> Result<CallToolResult, ErrorData> {
+        // Validate directory path against .agentignore
+        let path_str = req.path.as_deref().unwrap_or(".");
+        if let Err(msg) = self.ignore.validate_path(std::path::Path::new(path_str)) {
+            return Ok(CallToolResult::error(vec![Content::text(msg)]));
+        }
+
         let mut args: Vec<String> = vec!["--color=never".into()];
 
         if req.all.unwrap_or(false) {
@@ -2396,6 +2410,12 @@ impl ModernCliTools {
         &self,
         Parameters(req): Parameters<BatRequest>,
     ) -> Result<CallToolResult, ErrorData> {
+        // Check .agentignore
+        let path = std::path::Path::new(&req.path);
+        if let Err(msg) = self.ignore.validate_path(path) {
+            return Ok(CallToolResult::error(vec![Content::text(msg)]));
+        }
+
         let mut args: Vec<String> = vec!["--color=never".into(), "--paging=never".into()];
 
         if req.number.unwrap_or(true) {
@@ -2430,7 +2450,7 @@ impl ModernCliTools {
     #[tool(
         name = "Filesystem - Find (fd)",
         description = "Find files and directories with fd (modern find replacement). Returns JSON. \
-        Features: regex patterns, respects gitignore, type filtering, parallel execution."
+        Features: regex patterns, respects .agentignore, type filtering, parallel execution."
     )]
     async fn fd(
         &self,
@@ -2438,12 +2458,17 @@ impl ModernCliTools {
     ) -> Result<CallToolResult, ErrorData> {
         let mut args: Vec<String> = vec!["--color=never".into()];
 
+        // Add .agentignore support (disables .gitignore, uses only .agentignore)
+        let working_dir = req.path.as_deref().unwrap_or(".");
+        let ignore_args = self
+            .ignore
+            .get_ignore_file_args(std::path::Path::new(working_dir));
+        args.extend(ignore_args);
+
         if req.hidden.unwrap_or(false) {
             args.push("-H".into());
         }
-        if req.no_ignore.unwrap_or(false) {
-            args.push("-I".into());
-        }
+        // Note: no_ignore is deprecated - .agentignore is now the only ignore mechanism
         if req.ignore_case.unwrap_or(false) {
             args.push("-i".into());
         }
@@ -2473,6 +2498,9 @@ impl ModernCliTools {
         }
         if let Some(ref changed) = req.changed_within {
             args.push(format!("--changed-within={}", changed));
+        }
+        if let Some(max) = req.max_results {
+            args.push(format!("--max-results={}", max));
         }
         // fd expects [pattern] [path] - if path is given without pattern, use "." to match all
         if let Some(ref pattern) = req.pattern {
@@ -2537,6 +2565,12 @@ impl ModernCliTools {
         &self,
         Parameters(req): Parameters<DustRequest>,
     ) -> Result<CallToolResult, ErrorData> {
+        // Validate directory path against .agentignore
+        let path_str = req.path.as_deref().unwrap_or(".");
+        if let Err(msg) = self.ignore.validate_path(std::path::Path::new(path_str)) {
+            return Ok(CallToolResult::error(vec![Content::text(msg)]));
+        }
+
         let mut args: Vec<String> = vec![];
 
         if req.reverse.unwrap_or(false) {
@@ -2731,6 +2765,7 @@ impl ModernCliTools {
                     absolute: req.absolute,
                     size: req.size,
                     changed_within: req.changed_within,
+                    max_results: None, // Use individual fd tool for max_results
                 };
                 self.fd(Parameters(fd_req)).await
             }
@@ -3109,6 +3144,7 @@ impl ModernCliTools {
                     follow: req.follow,
                     json: req.json,
                     max_count: req.max_count,
+                    max_results: None, // Use individual rg tool for max_results
                     invert: req.invert,
                     only_matching: req.only_matching,
                     replace: req.replace,
@@ -4702,13 +4738,26 @@ impl ModernCliTools {
     #[tool(
         name = "Search - Content (ripgrep)",
         description = "Search file contents with ripgrep (rg) - extremely fast grep replacement. \
-        Features: regex, respects gitignore, parallel search, many output formats."
+        Features: regex, respects .agentignore, parallel search, many output formats."
     )]
     async fn rg(
         &self,
         Parameters(req): Parameters<RipgrepRequest>,
     ) -> Result<CallToolResult, ErrorData> {
         let mut args: Vec<String> = vec!["--color=never".into()];
+
+        // Add .agentignore support (disables .gitignore, uses only .agentignore)
+        let working_dir = req.path.as_deref().unwrap_or(".");
+        let ignore_args = self
+            .ignore
+            .get_ignore_file_args(std::path::Path::new(working_dir));
+        args.extend(ignore_args);
+
+        // Determine if JSON output is compatible with requested options
+        let files_only = req.files_with_matches.unwrap_or(false);
+        let count_only = req.count.unwrap_or(false);
+        // JSON output is default for AI consumption, but incompatible with -l/-c
+        let use_json = req.json.unwrap_or(!files_only && !count_only);
 
         if req.ignore_case.unwrap_or(false) {
             args.push("-i".into());
@@ -4719,16 +4768,14 @@ impl ModernCliTools {
         if req.hidden.unwrap_or(false) {
             args.push("--hidden".into());
         }
-        if req.no_ignore.unwrap_or(false) {
-            args.push("--no-ignore".into());
-        }
-        if req.files_with_matches.unwrap_or(false) {
+        // Note: no_ignore is deprecated - .agentignore is now the only ignore mechanism
+        if files_only {
             args.push("-l".into());
         }
-        if req.count.unwrap_or(false) {
+        if count_only {
             args.push("-c".into());
         }
-        if req.line_number.unwrap_or(true) {
+        if !use_json && req.line_number.unwrap_or(true) {
             args.push("-n".into());
         }
         if req.word.unwrap_or(false) {
@@ -4749,7 +4796,7 @@ impl ModernCliTools {
         if req.fixed_strings.unwrap_or(false) {
             args.push("-F".into());
         }
-        if req.json.unwrap_or(false) {
+        if use_json {
             args.push("--json".into());
         }
         if let Some(ctx) = req.context {
@@ -4775,9 +4822,27 @@ impl ModernCliTools {
 
         let args_ref: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
         match self.executor.run("rg", &args_ref).await {
-            Ok(output) => Ok(CallToolResult::success(vec![Content::text(
-                output.to_result_string(),
-            )])),
+            Ok(output) => {
+                if use_json {
+                    // Parse JSONL to JSON array for AI consumption
+                    let mut lines: Vec<serde_json::Value> = output
+                        .stdout
+                        .lines()
+                        .filter_map(|line| serde_json::from_str(line).ok())
+                        .collect();
+                    // Apply max_results limiting if specified
+                    if let Some(max) = req.max_results {
+                        lines.truncate(max as usize);
+                    }
+                    Ok(CallToolResult::success(vec![Content::text(
+                        serde_json::to_string(&lines).unwrap_or_else(|_| "[]".to_string()),
+                    )]))
+                } else {
+                    Ok(CallToolResult::success(vec![Content::text(
+                        output.to_result_string(),
+                    )]))
+                }
+            }
             Err(e) => Ok(CallToolResult::error(vec![Content::text(e)])),
         }
     }
@@ -4832,6 +4897,14 @@ impl ModernCliTools {
         &self,
         Parameters(req): Parameters<AstGrepRequest>,
     ) -> Result<CallToolResult, ErrorData> {
+        // Check .agentignore if path is specified
+        if let Some(ref path_str) = req.path {
+            let path = std::path::Path::new(path_str);
+            if let Err(msg) = self.ignore.validate_path(path) {
+                return Ok(CallToolResult::error(vec![Content::text(msg)]));
+            }
+        }
+
         let mut args: Vec<String> = vec![
             "run".into(),
             "--pattern".into(),
@@ -4884,9 +4957,11 @@ impl ModernCliTools {
             .await
         {
             Ok(output) => Ok(CallToolResult::success(vec![Content::text(
-                output.to_result_string(),
+                text_to_json_envelope("sd", &output.stdout, output.success),
             )])),
-            Err(e) => Ok(CallToolResult::error(vec![Content::text(e)])),
+            Err(e) => Ok(CallToolResult::error(vec![Content::text(
+                text_to_json_envelope("sd", &e, false),
+            )])),
         }
     }
 
@@ -5021,9 +5096,11 @@ impl ModernCliTools {
             .await
         {
             Ok(output) => Ok(CallToolResult::success(vec![Content::text(
-                output.to_result_string(),
+                text_to_json_envelope("hck", &output.stdout, output.success),
             )])),
-            Err(e) => Ok(CallToolResult::error(vec![Content::text(e)])),
+            Err(e) => Ok(CallToolResult::error(vec![Content::text(
+                text_to_json_envelope("hck", &e, false),
+            )])),
         }
     }
 
@@ -5039,7 +5116,8 @@ impl ModernCliTools {
         &self,
         Parameters(req): Parameters<ProcsRequest>,
     ) -> Result<CallToolResult, ErrorData> {
-        let mut args: Vec<String> = vec!["--color=never".into()];
+        // Use JSON output by default for AI consumption
+        let mut args: Vec<String> = vec!["--color=never".into(), "--json".into()];
 
         if req.tree.unwrap_or(false) {
             args.push("--tree".into());
@@ -5054,7 +5132,7 @@ impl ModernCliTools {
         let args_ref: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
         match self.executor.run("procs", &args_ref).await {
             Ok(output) => Ok(CallToolResult::success(vec![Content::text(
-                output.to_result_string(),
+                output.to_json_string(),
             )])),
             Err(e) => Ok(CallToolResult::error(vec![Content::text(e)])),
         }
@@ -5076,9 +5154,9 @@ impl ModernCliTools {
         if req.hidden.unwrap_or(false) {
             args.push("--hidden".into());
         }
-        if let Some(ref output) = req.output {
-            args.push(format!("--output={}", output));
-        }
+        // Default to JSON output for AI consumption
+        let output_format = req.output.as_deref().unwrap_or("json");
+        args.push(format!("--output={}", output_format));
         if let Some(ref sort) = req.sort {
             args.push(format!("--sort={}", sort));
         }
@@ -5094,9 +5172,18 @@ impl ModernCliTools {
 
         let args_ref: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
         match self.executor.run("tokei", &args_ref).await {
-            Ok(output) => Ok(CallToolResult::success(vec![Content::text(
-                output.to_result_string(),
-            )])),
+            Ok(output) => {
+                // tokei JSON output is already valid JSON
+                if output_format == "json" {
+                    Ok(CallToolResult::success(vec![Content::text(
+                        output.to_json_string(),
+                    )]))
+                } else {
+                    Ok(CallToolResult::success(vec![Content::text(
+                        output.to_result_string(),
+                    )]))
+                }
+            }
             Err(e) => Ok(CallToolResult::error(vec![Content::text(e)])),
         }
     }
@@ -5568,9 +5655,11 @@ impl ModernCliTools {
         let args_ref: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
         match self.executor.run("grex", &args_ref).await {
             Ok(output) => Ok(CallToolResult::success(vec![Content::text(
-                output.to_result_string(),
+                text_to_json_envelope("grex", &output.stdout, output.success),
             )])),
-            Err(e) => Ok(CallToolResult::error(vec![Content::text(e)])),
+            Err(e) => Ok(CallToolResult::error(vec![Content::text(
+                text_to_json_envelope("grex", &e, false),
+            )])),
         }
     }
 
@@ -6425,9 +6514,11 @@ impl ModernCliTools {
             .await
         {
             Ok(output) => Ok(CallToolResult::success(vec![Content::text(
-                output.to_result_string(),
+                text_to_json_envelope("htmlq", &output.stdout, output.success),
             )])),
-            Err(e) => Ok(CallToolResult::error(vec![Content::text(e)])),
+            Err(e) => Ok(CallToolResult::error(vec![Content::text(
+                text_to_json_envelope("htmlq", &e, false),
+            )])),
         }
     }
 
@@ -7346,8 +7437,11 @@ impl ModernCliTools {
     ) -> Result<CallToolResult, ErrorData> {
         let mut args: Vec<String> = vec!["status".into()];
 
-        if req.porcelain.unwrap_or(false) {
-            args.push("--porcelain".into());
+        // Use porcelain v2 by default for machine-parseable JSON output
+        let use_json = !req.short.unwrap_or(false);
+        if req.porcelain.unwrap_or(use_json) {
+            args.push("--porcelain=v2".into());
+            args.push("--branch".into());
         } else if req.short.unwrap_or(false) {
             args.push("-s".into());
         }
@@ -7358,9 +7452,19 @@ impl ModernCliTools {
             .run_in_dir("git", &args_ref, req.path.as_deref())
             .await
         {
-            Ok(output) => Ok(CallToolResult::success(vec![Content::text(
-                output.to_result_string(),
-            )])),
+            Ok(output) => {
+                if use_json {
+                    // Parse porcelain v2 format to JSON
+                    let json = parse_git_status_porcelain_v2(&output.stdout);
+                    Ok(CallToolResult::success(vec![Content::text(
+                        serde_json::to_string(&json).unwrap_or_else(|_| "{}".to_string()),
+                    )]))
+                } else {
+                    Ok(CallToolResult::success(vec![Content::text(
+                        output.to_result_string(),
+                    )]))
+                }
+            }
             Err(e) => Ok(CallToolResult::error(vec![Content::text(e)])),
         }
     }
@@ -7575,12 +7679,17 @@ impl ModernCliTools {
             args.push(format!("-{}", count));
         }
 
+        // Use JSON output by default unless custom format requested
+        let use_json = req.format.is_none() && !req.oneline.unwrap_or(false);
         if req.oneline.unwrap_or(false) {
             args.push("--oneline".into());
-        }
-
-        if let Some(format) = &req.format {
+        } else if let Some(format) = &req.format {
             args.push(format!("--format={}", format));
+        } else {
+            // JSON-friendly format with delimiters
+            args.push(
+                "--format=<COMMIT>%H<SEP>%h<SEP>%an<SEP>%ae<SEP>%ai<SEP>%s<SEP>%b<END>".into(),
+            );
         }
 
         if let Some(file) = &req.file {
@@ -7594,9 +7703,40 @@ impl ModernCliTools {
             .run_in_dir("git", &args_ref, req.path.as_deref())
             .await
         {
-            Ok(output) => Ok(CallToolResult::success(vec![Content::text(
-                output.to_result_string(),
-            )])),
+            Ok(output) => {
+                if use_json {
+                    // Parse custom format to JSON
+                    let commits: Vec<serde_json::Value> = output
+                        .stdout
+                        .split("<COMMIT>")
+                        .filter(|s| !s.is_empty())
+                        .filter_map(|commit| {
+                            let commit = commit.trim_end_matches("<END>").trim();
+                            let parts: Vec<&str> = commit.splitn(7, "<SEP>").collect();
+                            if parts.len() >= 6 {
+                                Some(serde_json::json!({
+                                    "hash": parts[0],
+                                    "short_hash": parts[1],
+                                    "author": parts[2],
+                                    "email": parts[3],
+                                    "date": parts[4],
+                                    "subject": parts[5],
+                                    "body": parts.get(6).unwrap_or(&"").trim(),
+                                }))
+                            } else {
+                                None
+                            }
+                        })
+                        .collect();
+                    Ok(CallToolResult::success(vec![Content::text(
+                        serde_json::to_string(&commits).unwrap_or_else(|_| "[]".to_string()),
+                    )]))
+                } else {
+                    Ok(CallToolResult::success(vec![Content::text(
+                        output.to_result_string(),
+                    )]))
+                }
+            }
             Err(e) => Ok(CallToolResult::error(vec![Content::text(e)])),
         }
     }
@@ -7899,6 +8039,11 @@ impl ModernCliTools {
             )]));
         }
 
+        // Check .agentignore
+        if let Err(msg) = self.ignore.validate_path(path) {
+            return Ok(CallToolResult::error(vec![Content::text(msg)]));
+        }
+
         match fs::read_to_string(path).await {
             Ok(content) => {
                 let lines: Vec<&str> = content.lines().collect();
@@ -7952,6 +8097,11 @@ impl ModernCliTools {
             return Ok(CallToolResult::error(vec![Content::text(
                 "Path must be absolute",
             )]));
+        }
+
+        // Check .agentignore
+        if let Err(msg) = self.ignore.validate_path(path) {
+            return Ok(CallToolResult::error(vec![Content::text(msg)]));
         }
 
         // Safe overwrite: if file exists and safe_overwrite is true, rip it first
@@ -8030,6 +8180,11 @@ impl ModernCliTools {
             return Ok(CallToolResult::error(vec![Content::text(
                 "Path must be absolute",
             )]));
+        }
+
+        // Check .agentignore
+        if let Err(msg) = self.ignore.validate_path(path) {
+            return Ok(CallToolResult::error(vec![Content::text(msg)]));
         }
 
         // Backup: if file exists and backup is true, copy to backup location
@@ -8124,6 +8279,11 @@ impl ModernCliTools {
             )]));
         }
 
+        // Check .agentignore
+        if let Err(msg) = self.ignore.validate_path(path) {
+            return Ok(CallToolResult::error(vec![Content::text(msg)]));
+        }
+
         let mut file = match OpenOptions::new()
             .create(true)
             .append(true)
@@ -8176,6 +8336,11 @@ impl ModernCliTools {
             return Ok(CallToolResult::error(vec![Content::text(
                 "Path must be absolute",
             )]));
+        }
+
+        // Check .agentignore
+        if let Err(msg) = self.ignore.validate_path(path) {
+            return Ok(CallToolResult::error(vec![Content::text(msg)]));
         }
 
         if !path.exists() {
@@ -8303,6 +8468,15 @@ impl ModernCliTools {
 
         let source = std::path::Path::new(&req.source);
         let dest = std::path::Path::new(&req.dest);
+
+        // Check .agentignore for both source and dest
+        if let Err(msg) = self.ignore.validate_path(source) {
+            return Ok(CallToolResult::error(vec![Content::text(msg)]));
+        }
+        if let Err(msg) = self.ignore.validate_path(dest) {
+            return Ok(CallToolResult::error(vec![Content::text(msg)]));
+        }
+
         let mut graveyarded = false;
 
         // Safe overwrite: if dest exists and safe_overwrite is true, rip it first
@@ -8401,7 +8575,17 @@ impl ModernCliTools {
     ) -> Result<CallToolResult, ErrorData> {
         use tokio::fs;
 
+        let source_path = std::path::Path::new(&req.source);
         let dest_path = std::path::Path::new(&req.dest);
+
+        // Check .agentignore for both source and dest
+        if let Err(msg) = self.ignore.validate_path(source_path) {
+            return Ok(CallToolResult::error(vec![Content::text(msg)]));
+        }
+        if let Err(msg) = self.ignore.validate_path(dest_path) {
+            return Ok(CallToolResult::error(vec![Content::text(msg)]));
+        }
+
         let mut graveyarded = false;
 
         // Safe overwrite: if dest exists and safe_overwrite is true, rip it first
@@ -9099,6 +9283,75 @@ fn format_uptime(secs: u64) -> String {
     } else {
         format!("{}m", mins)
     }
+}
+
+/// Wrap text output in JSON envelope for consistent AI consumption
+fn text_to_json_envelope(tool: &str, output: &str, success: bool) -> String {
+    serde_json::json!({
+        "success": success,
+        "tool": tool,
+        "output": output
+    })
+    .to_string()
+}
+
+/// Parse git status --porcelain=v2 output to JSON
+fn parse_git_status_porcelain_v2(output: &str) -> serde_json::Value {
+    let mut branch = serde_json::json!({});
+    let mut files: Vec<serde_json::Value> = vec![];
+
+    for line in output.lines() {
+        if line.starts_with("# branch.oid ") {
+            branch["oid"] = serde_json::json!(line.strip_prefix("# branch.oid ").unwrap_or(""));
+        } else if line.starts_with("# branch.head ") {
+            branch["head"] = serde_json::json!(line.strip_prefix("# branch.head ").unwrap_or(""));
+        } else if line.starts_with("# branch.upstream ") {
+            branch["upstream"] =
+                serde_json::json!(line.strip_prefix("# branch.upstream ").unwrap_or(""));
+        } else if line.starts_with("# branch.ab ") {
+            let ab = line.strip_prefix("# branch.ab ").unwrap_or("");
+            let parts: Vec<&str> = ab.split_whitespace().collect();
+            if parts.len() >= 2 {
+                branch["ahead"] =
+                    serde_json::json!(parts[0].trim_start_matches('+').parse::<i32>().unwrap_or(0));
+                branch["behind"] =
+                    serde_json::json!(parts[1].trim_start_matches('-').parse::<i32>().unwrap_or(0));
+            }
+        } else if line.starts_with("1 ") || line.starts_with("2 ") {
+            // Changed entries
+            let parts: Vec<&str> = line.splitn(9, ' ').collect();
+            if parts.len() >= 9 {
+                let xy = parts[1];
+                files.push(serde_json::json!({
+                    "status": xy,
+                    "staged": xy.chars().next().unwrap_or(' ') != '.',
+                    "unstaged": xy.chars().nth(1).unwrap_or(' ') != '.',
+                    "path": parts[8],
+                }));
+            }
+        } else if line.starts_with("? ") {
+            // Untracked
+            files.push(serde_json::json!({
+                "status": "?",
+                "staged": false,
+                "unstaged": false,
+                "untracked": true,
+                "path": line.strip_prefix("? ").unwrap_or(""),
+            }));
+        } else if line.starts_with("! ") {
+            // Ignored
+            files.push(serde_json::json!({
+                "status": "!",
+                "ignored": true,
+                "path": line.strip_prefix("! ").unwrap_or(""),
+            }));
+        }
+    }
+
+    serde_json::json!({
+        "branch": branch,
+        "files": files,
+    })
 }
 
 async fn copy_dir_recursive(src: &std::path::Path, dst: &std::path::Path) -> std::io::Result<u64> {
