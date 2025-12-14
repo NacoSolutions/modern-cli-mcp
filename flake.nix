@@ -3,8 +3,9 @@
   description = "MCP server exposing modern CLI tools for AI/LLM agents";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
+    # FlakeHub URLs for better version management
+    nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1.*.tar.gz";
+    flake-utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.*.tar.gz";
 
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
