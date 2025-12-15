@@ -65,7 +65,7 @@ gh release create vX.Y.Z \
 
 ## Installation
 ```bash
-nix run github:hellst0rm/modern-cli-mcp@vX.Y.Z
+nix run github:NacoSolutions/modern-cli-mcp@vX.Y.Z
 ```
 
 See [RELEASE_NOTES.md](RELEASE_NOTES.md) for full changelog.
@@ -79,10 +79,10 @@ NOTES
 gh run list --workflow=publish.yml --limit 3
 
 # Verify Nix
-nix run github:hellst0rm/modern-cli-mcp@vX.Y.Z
+nix run github:NacoSolutions/modern-cli-mcp@vX.Y.Z
 
 # Verify Docker
-docker pull ghcr.io/hellst0rm/modern-cli-mcp:X.Y.Z
+docker pull ghcr.io/NacoSolutions/modern-cli-mcp:X.Y.Z
 ```
 
 ## Artifacts Generated

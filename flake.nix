@@ -66,7 +66,7 @@
 
           meta = with pkgs.lib; {
             description = "MCP server exposing modern CLI tools";
-            homepage = "https://github.com/hellst0rm/modern-cli-mcp";
+            homepage = "https://github.com/NacoSolutions/modern-cli-mcp";
             license = licenses.mit;
             maintainers = [ ];
             mainProgram = "modern-cli-mcp";

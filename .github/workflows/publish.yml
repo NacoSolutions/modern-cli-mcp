@@ -164,6 +164,6 @@ jobs:
       - uses: DeterminateSystems/flakehub-push@main
         with:
           visibility: public
-          name: hellst0rm/modern-cli-mcp
+          name: NacoSolutions/modern-cli-mcp
           tag: ${{ github.ref_name }}
           include-output-paths: true

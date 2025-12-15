@@ -15,7 +15,7 @@ Add to your AI tool's global config (e.g., `~/.claude.json`):
   "mcpServers": {
     "basic-memory": { "command": "uvx", "args": ["basic-memory", "mcp"] },
     "sequentialthinking": { "command": "npx", "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"] },
-    "modern-cli": { "command": "nix", "args": ["run", "github:hellst0rm/modern-cli-mcp", "--"] }
+    "modern-cli": { "command": "nix", "args": ["run", "github:NacoSolutions/modern-cli-mcp", "--"] }
   }
 }
 ```
@@ -139,8 +139,8 @@ echo '{"jsonrpc":"2.0","method":"tools/list","id":1}' | cargo run
 
 ## Distribution Methods
 
-1. **Nix**: `nix run github:hellst0rm/modern-cli-mcp`
-2. **Docker**: `ghcr.io/hellst0rm/modern-cli-mcp`
+1. **Nix**: `nix run github:NacoSolutions/modern-cli-mcp`
+2. **Docker**: `ghcr.io/nacosolutions/modern-cli-mcp`
 3. **Binary**: GitHub releases (Linux x86_64)
 4. **Cargo**: `cargo install --git ...`
 

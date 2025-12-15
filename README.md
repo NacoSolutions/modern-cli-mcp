@@ -1,12 +1,12 @@
 # Modern CLI MCP Server
 
-[![CI](https://github.com/hellst0rm/modern-cli-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/hellst0rm/modern-cli-mcp/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/hellst0rm/modern-cli-mcp)](https://github.com/hellst0rm/modern-cli-mcp/releases)
-[![Docker](https://img.shields.io/badge/Docker-ghcr.io-blue)](https://ghcr.io/hellst0rm/modern-cli-mcp)
-[![FlakeHub](https://img.shields.io/endpoint?url=https://flakehub.com/f/hellst0rm/modern-cli-mcp/badge)](https://flakehub.com/flake/hellst0rm/modern-cli-mcp)
+[![CI](https://github.com/NacoSolutions/modern-cli-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/NacoSolutions/modern-cli-mcp/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/NacoSolutions/modern-cli-mcp)](https://github.com/NacoSolutions/modern-cli-mcp/releases)
+[![Docker](https://img.shields.io/badge/Docker-ghcr.io-blue)](https://ghcr.io/nacosolutions/modern-cli-mcp)
+[![FlakeHub](https://img.shields.io/endpoint?url=https://flakehub.com/f/NacoSolutions/modern-cli-mcp/badge)](https://flakehub.com/flake/NacoSolutions/modern-cli-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**[Documentation](https://hellst0rm.github.io/modern-cli-mcp/)** · **[Tools](https://hellst0rm.github.io/modern-cli-mcp/tools.html)**
+**[Documentation](https://nacosolutions.github.io/modern-cli-mcp/)** · **[Tools](https://nacosolutions.github.io/modern-cli-mcp/tools.html)**
 
 MCP server exposing **107 modern CLI tools** to AI/LLM agents. Provides structured JSON-RPC access to filesystem, Git forges, containers, Kubernetes, and data transformation tools—all optimized for AI consumption with JSON output.
 
@@ -29,7 +29,7 @@ Add to your MCP configuration:
   "mcpServers": {
     "modern-cli": {
       "command": "nix",
-      "args": ["run", "github:hellst0rm/modern-cli-mcp", "--"]
+      "args": ["run", "github:NacoSolutions/modern-cli-mcp", "--"]
     }
   }
 }
@@ -41,7 +41,7 @@ Add to your MCP configuration:
   "mcpServers": {
     "modern-cli": {
       "command": "docker",
-      "args": ["run", "--rm", "-i", "ghcr.io/hellst0rm/modern-cli-mcp"]
+      "args": ["run", "--rm", "-i", "ghcr.io/nacosolutions/modern-cli-mcp"]
     }
   }
 }
@@ -167,18 +167,18 @@ experimental-features = nix-command flakes
 
 **Run directly (no installation):**
 ```bash
-nix run github:hellst0rm/modern-cli-mcp
+nix run github:NacoSolutions/modern-cli-mcp
 ```
 
 **Install to profile:**
 ```bash
-nix profile install github:hellst0rm/modern-cli-mcp
+nix profile install github:NacoSolutions/modern-cli-mcp
 ```
 
 **Add to flake.nix:**
 ```nix
 {
-  inputs.modern-cli-mcp.url = "github:hellst0rm/modern-cli-mcp";
+  inputs.modern-cli-mcp.url = "github:NacoSolutions/modern-cli-mcp";
 
   # Use in outputs
   outputs = { self, nixpkgs, modern-cli-mcp }: {
@@ -193,19 +193,19 @@ nix profile install github:hellst0rm/modern-cli-mcp
 
 **Add to flake.nix via CLI:**
 ```bash
-fh add hellst0rm/modern-cli-mcp
+fh add NacoSolutions/modern-cli-mcp
 ```
 
 **Or manually:**
 ```nix
 {
-  inputs.modern-cli-mcp.url = "https://flakehub.com/f/hellst0rm/modern-cli-mcp/*.tar.gz";
+  inputs.modern-cli-mcp.url = "https://flakehub.com/f/NacoSolutions/modern-cli-mcp/*.tar.gz";
 }
 ```
 
 **Run specific version:**
 ```bash
-nix run "https://flakehub.com/f/hellst0rm/modern-cli-mcp/0.2.tar.gz"
+nix run "https://flakehub.com/f/NacoSolutions/modern-cli-mcp/0.2.tar.gz"
 ```
 
 ### Nix without Flakes (Classic)
@@ -214,13 +214,13 @@ For Nix installations without flakes enabled, the repository includes a `default
 
 **Build from tarball:**
 ```bash
-nix-build https://github.com/hellst0rm/modern-cli-mcp/archive/main.tar.gz -A defaultNix.default
+nix-build https://github.com/NacoSolutions/modern-cli-mcp/archive/main.tar.gz -A defaultNix.default
 ./result/bin/modern-cli-mcp
 ```
 
 **Or clone and build locally:**
 ```bash
-git clone https://github.com/hellst0rm/modern-cli-mcp
+git clone https://github.com/NacoSolutions/modern-cli-mcp
 cd modern-cli-mcp
 nix-build
 ./result/bin/modern-cli-mcp
@@ -228,14 +228,14 @@ nix-build
 
 **Install to profile:**
 ```bash
-nix-env -if https://github.com/hellst0rm/modern-cli-mcp/archive/main.tar.gz -A defaultNix.default
+nix-env -if https://github.com/NacoSolutions/modern-cli-mcp/archive/main.tar.gz -A defaultNix.default
 ```
 
 ### Docker
 
 ```bash
-docker pull ghcr.io/hellst0rm/modern-cli-mcp
-docker run --rm -i ghcr.io/hellst0rm/modern-cli-mcp
+docker pull ghcr.io/nacosolutions/modern-cli-mcp
+docker run --rm -i ghcr.io/nacosolutions/modern-cli-mcp
 ```
 
 ### From Source (Cargo)
@@ -243,7 +243,7 @@ docker run --rm -i ghcr.io/hellst0rm/modern-cli-mcp
 Requires CLI tools to be installed separately in PATH:
 
 ```bash
-cargo install --git https://github.com/hellst0rm/modern-cli-mcp
+cargo install --git https://github.com/NacoSolutions/modern-cli-mcp
 ```
 
 ## Development

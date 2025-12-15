@@ -51,10 +51,10 @@ Modern CLI MCP v0.2.0 massively expands the tool collection with Git forge integ
 
 ```bash
 # Nix (recommended)
-nix run github:hellst0rm/modern-cli-mcp
+nix run github:NacoSolutions/modern-cli-mcp
 
 # Docker
-docker pull ghcr.io/hellst0rm/modern-cli-mcp:0.2.0
+docker pull ghcr.io/nacosolutions/modern-cli-mcp:0.2.0
 ```
 
 ## Configuration
@@ -65,7 +65,7 @@ Add to Claude Desktop config:
   "mcpServers": {
     "modern-cli": {
       "command": "nix",
-      "args": ["run", "github:hellst0rm/modern-cli-mcp"]
+      "args": ["run", "github:NacoSolutions/modern-cli-mcp"]
     }
   }
 }
@@ -97,5 +97,5 @@ Modern CLI MCP is an MCP server that exposes modern command-line utilities to AI
 ## Installation
 
 ```bash
-nix run github:hellst0rm/modern-cli-mcp
+nix run github:NacoSolutions/modern-cli-mcp
 ```

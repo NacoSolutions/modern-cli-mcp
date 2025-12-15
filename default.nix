@@ -2,8 +2,8 @@
 # Compatibility shim for non-flake Nix users
 # Usage:
 #   nix-build
-#   nix-shell -p '(import (fetchTarball "https://github.com/hellst0rm/modern-cli-mcp/archive/main.tar.gz") {})'
-#   nix-env -if https://github.com/hellst0rm/modern-cli-mcp/archive/main.tar.gz
+#   nix-shell -p '(import (fetchTarball "https://github.com/NacoSolutions/modern-cli-mcp/archive/main.tar.gz") {})'
+#   nix-env -if https://github.com/NacoSolutions/modern-cli-mcp/archive/main.tar.gz
 (import (
   let
     lock = builtins.fromJSON (builtins.readFile ./flake.lock);

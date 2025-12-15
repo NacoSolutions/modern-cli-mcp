@@ -19,7 +19,7 @@
           <a href="index.html" class="hover:text-cyan-400 transition">Home</a>
           <a href="tools.html" class="hover:text-cyan-400 transition">Tools</a>
           <a href="docs.html" class="text-cyan-400">Docs</a>
-          <a href="https://github.com/hellst0rm/modern-cli-mcp" class="hover:text-cyan-400 transition" target="_blank">GitHub</a>
+          <a href="https://github.com/NacoSolutions/modern-cli-mcp" class="hover:text-cyan-400 transition" target="_blank">GitHub</a>
         </div>
       </div>
     </div>
@@ -54,14 +54,14 @@
           <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-4"><code>experimental-features = nix-command flakes</code></pre>
 
           <p class="text-gray-400 mb-2">Run directly (no installation):</p>
-          <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-4"><code>nix run github:hellst0rm/modern-cli-mcp</code></pre>
+          <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-4"><code>nix run github:NacoSolutions/modern-cli-mcp</code></pre>
 
           <p class="text-gray-400 mb-2">Install to profile:</p>
-          <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-4"><code>nix profile install github:hellst0rm/modern-cli-mcp</code></pre>
+          <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-4"><code>nix profile install github:NacoSolutions/modern-cli-mcp</code></pre>
 
           <p class="text-gray-400 mb-2">Add to flake.nix:</p>
           <pre class="bg-gray-800 p-4 rounded overflow-x-auto"><code class="text-cyan-300">{
-  inputs.modern-cli-mcp.url = "github:hellst0rm/modern-cli-mcp";
+  inputs.modern-cli-mcp.url = "github:NacoSolutions/modern-cli-mcp";
 
   outputs = { self, nixpkgs, modern-cli-mcp }: {
     # Use modern-cli-mcp.packages.${system}.default
@@ -77,15 +77,15 @@
           </p>
 
           <p class="text-gray-400 mb-2">Add to flake.nix via CLI:</p>
-          <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-4"><code>fh add hellst0rm/modern-cli-mcp</code></pre>
+          <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-4"><code>fh add NacoSolutions/modern-cli-mcp</code></pre>
 
           <p class="text-gray-400 mb-2">Or manually:</p>
           <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-4"><code class="text-cyan-300">{
-  inputs.modern-cli-mcp.url = "https://flakehub.com/f/hellst0rm/modern-cli-mcp/*.tar.gz";
+  inputs.modern-cli-mcp.url = "https://flakehub.com/f/NacoSolutions/modern-cli-mcp/*.tar.gz";
 }</code></pre>
 
           <p class="text-gray-400 mb-2">Run specific version:</p>
-          <pre class="bg-gray-800 p-4 rounded overflow-x-auto"><code>nix run "https://flakehub.com/f/hellst0rm/modern-cli-mcp/0.3.tar.gz"</code></pre>
+          <pre class="bg-gray-800 p-4 rounded overflow-x-auto"><code>nix run "https://flakehub.com/f/NacoSolutions/modern-cli-mcp/0.3.tar.gz"</code></pre>
         </div>
 
         <!-- Classic Nix -->
@@ -96,31 +96,31 @@
           </p>
 
           <p class="text-gray-400 mb-2">Build from tarball:</p>
-          <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-4"><code>nix-build https://github.com/hellst0rm/modern-cli-mcp/archive/main.tar.gz -A defaultNix.default
+          <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-4"><code>nix-build https://github.com/NacoSolutions/modern-cli-mcp/archive/main.tar.gz -A defaultNix.default
 ./result/bin/modern-cli-mcp</code></pre>
 
           <p class="text-gray-400 mb-2">Or clone and build locally:</p>
-          <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-4"><code>git clone https://github.com/hellst0rm/modern-cli-mcp
+          <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-4"><code>git clone https://github.com/NacoSolutions/modern-cli-mcp
 cd modern-cli-mcp
 nix-build
 ./result/bin/modern-cli-mcp</code></pre>
 
           <p class="text-gray-400 mb-2">Install to profile:</p>
-          <pre class="bg-gray-800 p-4 rounded overflow-x-auto"><code>nix-env -if https://github.com/hellst0rm/modern-cli-mcp/archive/main.tar.gz -A defaultNix.default</code></pre>
+          <pre class="bg-gray-800 p-4 rounded overflow-x-auto"><code>nix-env -if https://github.com/NacoSolutions/modern-cli-mcp/archive/main.tar.gz -A defaultNix.default</code></pre>
         </div>
 
         <!-- Docker -->
         <div>
           <h3 class="text-xl font-semibold mb-2">Docker</h3>
-          <pre class="bg-gray-800 p-4 rounded overflow-x-auto"><code>docker pull ghcr.io/hellst0rm/modern-cli-mcp
-docker run --rm -i ghcr.io/hellst0rm/modern-cli-mcp</code></pre>
+          <pre class="bg-gray-800 p-4 rounded overflow-x-auto"><code>docker pull ghcr.io/nacosolutions/modern-cli-mcp
+docker run --rm -i ghcr.io/nacosolutions/modern-cli-mcp</code></pre>
         </div>
 
         <!-- Cargo -->
         <div>
           <h3 class="text-xl font-semibold mb-2">From Source (Cargo)</h3>
           <p class="text-gray-400 mb-3">Requires CLI tools to be installed separately in PATH:</p>
-          <pre class="bg-gray-800 p-4 rounded overflow-x-auto"><code>cargo install --git https://github.com/hellst0rm/modern-cli-mcp</code></pre>
+          <pre class="bg-gray-800 p-4 rounded overflow-x-auto"><code>cargo install --git https://github.com/NacoSolutions/modern-cli-mcp</code></pre>
         </div>
       </div>
     </section>
@@ -134,7 +134,7 @@ docker run --rm -i ghcr.io/hellst0rm/modern-cli-mcp</code></pre>
   "mcpServers": {
     "modern-cli": {
       "command": "nix",
-      "args": ["run", "github:hellst0rm/modern-cli-mcp", "--"]
+      "args": ["run", "github:NacoSolutions/modern-cli-mcp", "--"]
     }
   }
 }</code></pre>
@@ -145,7 +145,7 @@ docker run --rm -i ghcr.io/hellst0rm/modern-cli-mcp</code></pre>
   "mcpServers": {
     "modern-cli": {
       "command": "nix",
-      "args": ["run", "github:hellst0rm/modern-cli-mcp", "--"]
+      "args": ["run", "github:NacoSolutions/modern-cli-mcp", "--"]
     }
   }
 }</code></pre>
@@ -155,7 +155,7 @@ docker run --rm -i ghcr.io/hellst0rm/modern-cli-mcp</code></pre>
   "mcpServers": {
     "modern-cli": {
       "command": "docker",
-      "args": ["run", "--rm", "-i", "ghcr.io/hellst0rm/modern-cli-mcp"]
+      "args": ["run", "--rm", "-i", "ghcr.io/nacosolutions/modern-cli-mcp"]
     }
   }
 }</code></pre>
@@ -171,20 +171,20 @@ docker run --rm -i ghcr.io/hellst0rm/modern-cli-mcp</code></pre>
 
       <h3 class="text-xl font-semibold mb-2">Usage</h3>
       <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-6"><code># Run with a specific profile
-nix run github:hellst0rm/modern-cli-mcp -- --profile explore
+nix run github:NacoSolutions/modern-cli-mcp -- --profile explore
 
 # List available profiles
-nix run github:hellst0rm/modern-cli-mcp -- --list-profiles
+nix run github:NacoSolutions/modern-cli-mcp -- --list-profiles
 
 # List tool groups
-nix run github:hellst0rm/modern-cli-mcp -- --list-groups</code></pre>
+nix run github:NacoSolutions/modern-cli-mcp -- --list-groups</code></pre>
 
       <h3 class="text-xl font-semibold mb-2">MCP Configuration with Profile</h3>
       <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-6"><code class="text-cyan-300">{
   "mcpServers": {
     "modern-cli": {
       "command": "nix",
-      "args": ["run", "github:hellst0rm/modern-cli-mcp", "--", "--profile", "explore"]
+      "args": ["run", "github:NacoSolutions/modern-cli-mcp", "--", "--profile", "explore"]
     }
   }
 }</code></pre>
@@ -360,7 +360,7 @@ target/
 
   <footer class="bg-gray-800 border-t border-gray-700 mt-16 py-8">
     <div class="max-w-6xl mx-auto px-4 text-center text-gray-400">
-      <p>MIT License &middot; <a href="https://github.com/hellst0rm/modern-cli-mcp" class="hover:text-cyan-400">GitHub</a></p>
+      <p>MIT License &middot; <a href="https://github.com/NacoSolutions/modern-cli-mcp" class="hover:text-cyan-400">GitHub</a></p>
     </div>
   </footer>
 </body>
