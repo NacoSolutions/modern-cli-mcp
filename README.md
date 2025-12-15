@@ -293,8 +293,40 @@ The server wraps CLI tools with structured JSON input/output. Each tool:
 
 The Nix package bundles all CLI tools. When running via cargo, ensure tools are in PATH.
 
-Environment variables:
+### Environment Variables
+
 - `RUST_LOG` - Logging level (default: `info`)
+
+### .agentignore
+
+Control which files AI agents can access using `.agentignore` files. Uses gitignore syntax but operates independently—tools respect `.agentignore` only, not `.gitignore`.
+
+**Pattern sources (in order of precedence):**
+1. `~/.config/agent/ignore` - Global patterns for all projects
+2. `.agentignore` - Per-directory patterns (walked up from working directory)
+
+**Example `.agentignore`:**
+```gitignore
+# Secrets and credentials
+*.secret
+.env*
+secrets/
+credentials.json
+
+# Large generated files
+node_modules/
+target/
+*.min.js
+
+# Sensitive data
+*.pem
+*.key
+```
+
+**Behavior:**
+- Blocked paths return an error: `Path is blocked by .agentignore: /path/to/file`
+- Search tools (fd, rg, ast-grep) automatically apply ignore patterns
+- Patterns in child directories extend (not replace) parent patterns
 
 ## License
 

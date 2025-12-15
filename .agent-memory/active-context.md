@@ -37,9 +37,9 @@ Integrated Determinate Nix and FlakeHub for improved CI/CD and flake management.
 - [architecture] Global memory: ~/.agent-memory/, Project memory: ./.agent-memory/
 
 ## Next Steps
-- Verify CI passes with Determinate Nix integration
+- ~~Verify CI passes with Determinate Nix integration~~ ✓ (2025-12-15, run #20215317346)
 - Test FlakeHub publish workflow on next release
-- Document .agentignore usage in README
+- ~~Document .agentignore usage in README~~ ✓ (2025-12-15)
 
 ## Relations
 
