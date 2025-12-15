@@ -33,6 +33,7 @@
       <ul class="space-y-1">
         <li><a href="#installation" class="hover:text-cyan-400">Installation</a></li>
         <li><a href="#configuration" class="hover:text-cyan-400">Configuration</a></li>
+        <li><a href="#profiles" class="hover:text-cyan-400">Agent Profiles</a></li>
         <li><a href="#agentignore" class="hover:text-cyan-400">.agentignore</a></li>
         <li><a href="#usage" class="hover:text-cyan-400">Usage</a></li>
         <li><a href="#environment" class="hover:text-cyan-400">Environment Variables</a></li>
@@ -158,6 +159,102 @@ docker run --rm -i ghcr.io/hellst0rm/modern-cli-mcp</code></pre>
     }
   }
 }</code></pre>
+    </section>
+
+    <section id="profiles" class="mb-12">
+      <h2 class="text-2xl font-semibold mb-6 text-cyan-400">Agent Profiles</h2>
+
+      <p class="text-gray-400 mb-4">
+        Profiles pre-expand relevant tool groups for specific agent roles, reducing cognitive load and improving response latency.
+        Use the <code class="bg-gray-800 px-2 py-1 rounded">--profile</code> flag to select a profile.
+      </p>
+
+      <h3 class="text-xl font-semibold mb-2">Usage</h3>
+      <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-6"><code># Run with a specific profile
+nix run github:hellst0rm/modern-cli-mcp -- --profile explore
+
+# List available profiles
+nix run github:hellst0rm/modern-cli-mcp -- --list-profiles
+
+# List tool groups
+nix run github:hellst0rm/modern-cli-mcp -- --list-groups</code></pre>
+
+      <h3 class="text-xl font-semibold mb-2">MCP Configuration with Profile</h3>
+      <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-6"><code class="text-cyan-300">{
+  "mcpServers": {
+    "modern-cli": {
+      "command": "nix",
+      "args": ["run", "github:hellst0rm/modern-cli-mcp", "--", "--profile", "explore"]
+    }
+  }
+}</code></pre>
+
+      <h3 class="text-xl font-semibold mb-3">Available Profiles</h3>
+      <div class="space-y-3">
+        <div class="bg-gray-800 p-4 rounded border-l-4 border-cyan-400">
+          <div class="flex items-center justify-between mb-1">
+            <code class="text-cyan-400 font-semibold">explore</code>
+            <span class="text-xs text-gray-500">filesystem, search, git</span>
+          </div>
+          <p class="text-sm text-gray-400">Codebase discovery and exploration. Read-only focus for understanding project structure.</p>
+        </div>
+        <div class="bg-gray-800 p-4 rounded border-l-4 border-cyan-400">
+          <div class="flex items-center justify-between mb-1">
+            <code class="text-cyan-400 font-semibold">architect</code>
+            <span class="text-xs text-gray-500">filesystem, search, reference</span>
+          </div>
+          <p class="text-sm text-gray-400">System design and architecture planning. Access to docs and reference materials.</p>
+        </div>
+        <div class="bg-gray-800 p-4 rounded border-l-4 border-cyan-400">
+          <div class="flex items-center justify-between mb-1">
+            <code class="text-cyan-400 font-semibold">review</code>
+            <span class="text-xs text-gray-500">git, search, diff</span>
+          </div>
+          <p class="text-sm text-gray-400">Code review and quality analysis. Git diffs, search, and file comparison.</p>
+        </div>
+        <div class="bg-gray-800 p-4 rounded border-l-4 border-cyan-400">
+          <div class="flex items-center justify-between mb-1">
+            <code class="text-cyan-400 font-semibold">generator</code>
+            <span class="text-xs text-gray-500">file_ops, search, git, system</span>
+          </div>
+          <p class="text-sm text-gray-400">General task execution. Broadest access for typical development work.</p>
+        </div>
+        <div class="bg-gray-800 p-4 rounded border-l-4 border-cyan-400">
+          <div class="flex items-center justify-between mb-1">
+            <code class="text-cyan-400 font-semibold">test</code>
+            <span class="text-xs text-gray-500">file_ops, search, system</span>
+          </div>
+          <p class="text-sm text-gray-400">Test writing and execution. Shell access for running test suites.</p>
+        </div>
+        <div class="bg-gray-800 p-4 rounded border-l-4 border-cyan-400">
+          <div class="flex items-center justify-between mb-1">
+            <code class="text-cyan-400 font-semibold">dev-deploy</code>
+            <span class="text-xs text-gray-500">kubernetes, container, git, github</span>
+          </div>
+          <p class="text-sm text-gray-400">Container and Kubernetes deployment. CI/CD and infrastructure operations.</p>
+        </div>
+        <div class="bg-gray-800 p-4 rounded border-l-4 border-cyan-400">
+          <div class="flex items-center justify-between mb-1">
+            <code class="text-cyan-400 font-semibold">api</code>
+            <span class="text-xs text-gray-500">network, text, file_ops</span>
+          </div>
+          <p class="text-sm text-gray-400">API interaction and integration. HTTP requests, JSON/YAML processing.</p>
+        </div>
+        <div class="bg-gray-800 p-4 rounded border-l-4 border-cyan-400">
+          <div class="flex items-center justify-between mb-1">
+            <code class="text-cyan-400 font-semibold">full</code>
+            <span class="text-xs text-gray-500">all groups</span>
+          </div>
+          <p class="text-sm text-gray-400">All tools pre-expanded. Maximum capability, higher cognitive load.</p>
+        </div>
+      </div>
+
+      <h3 class="text-xl font-semibold mb-2 mt-6">Tool Discovery</h3>
+      <p class="text-gray-400 mb-3">Even with a limited profile, agents can discover additional tools:</p>
+      <ul class="list-disc list-inside text-gray-400 space-y-1">
+        <li><code class="bg-gray-800 px-2 py-1 rounded">list_tool_groups</code> — List all 15 tool groups with descriptions</li>
+        <li><code class="bg-gray-800 px-2 py-1 rounded">expand_tools &lt;group&gt;</code> — Show all tools in a specific group</li>
+      </ul>
     </section>
 
     <section id="agentignore" class="mb-12">

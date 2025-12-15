@@ -32,8 +32,8 @@
     <!-- Stats -->
     <div class="grid grid-cols-3 gap-4 mb-8 max-w-md">
       <div class="bg-gray-800 p-4 rounded-lg text-center">
-        <div class="text-2xl font-bold text-cyan-400">15</div>
-        <div class="text-sm text-gray-400">Groups</div>
+        <div class="text-2xl font-bold text-cyan-400">13</div>
+        <div class="text-sm text-gray-400">Categories</div>
       </div>
       <div class="bg-gray-800 p-4 rounded-lg text-center">
         <div class="text-2xl font-bold text-cyan-400">100+</div>
@@ -140,57 +140,50 @@
         </div>
       </div>
 
-      <!-- Git -->
-      <div class="tool-card bg-gray-800 p-6 rounded-lg border border-gray-700 hover:border-cyan-400/50 transition">
+      <!-- Git & Forges -->
+      <div class="tool-card bg-gray-800 p-6 rounded-lg border border-gray-700 hover:border-cyan-400/50 transition md:col-span-2">
         <div class="flex items-center justify-between mb-2">
-          <h3 class="text-xl font-semibold text-cyan-400">Git Version Control</h3>
-          <span class="bg-gray-700 px-2 py-1 rounded text-xs">8 tools</span>
+          <h3 class="text-xl font-semibold text-cyan-400">Git & Forges</h3>
+          <span class="bg-gray-700 px-2 py-1 rounded text-xs">23 tools</span>
         </div>
-        <p class="text-gray-400 text-sm mb-4">Status, diff, log, add, commit, checkout, branch, stash operations</p>
-        <div class="flex flex-wrap gap-2">
-          <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">git_status</span>
-          <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">git_diff</span>
-          <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">git_log</span>
-          <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">git_add</span>
-          <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">git_commit</span>
-          <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">git_checkout</span>
-          <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">git_branch</span>
-          <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">git_stash</span>
-        </div>
-      </div>
+        <p class="text-gray-400 text-sm mb-4">Git operations, GitHub (gh), and GitLab (glab) - repos, issues, PRs/MRs, releases, workflows, pipelines</p>
 
-      <!-- GitHub -->
-      <div class="tool-card bg-gray-800 p-6 rounded-lg border border-gray-700 hover:border-cyan-400/50 transition">
-        <div class="flex items-center justify-between mb-2">
-          <h3 class="text-xl font-semibold text-cyan-400">GitHub</h3>
-          <span class="bg-gray-700 px-2 py-1 rounded text-xs">10 tools</span>
-        </div>
-        <p class="text-gray-400 text-sm mb-4">Repository, issue, PR, release, workflow, and API operations via gh CLI</p>
-        <div class="flex flex-wrap gap-2">
-          <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">gh_repo</span>
-          <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">gh_issue</span>
-          <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">gh_pr</span>
-          <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">gh_search</span>
-          <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">gh_release</span>
-          <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">gh_workflow</span>
-          <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">gh_run</span>
-          <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">gh_api</span>
-          <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">gh_auth</span>
-        </div>
-      </div>
-
-      <!-- GitLab -->
-      <div class="tool-card bg-gray-800 p-6 rounded-lg border border-gray-700 hover:border-cyan-400/50 transition">
-        <div class="flex items-center justify-between mb-2">
-          <h3 class="text-xl font-semibold text-cyan-400">GitLab</h3>
-          <span class="bg-gray-700 px-2 py-1 rounded text-xs">5 tools</span>
-        </div>
-        <p class="text-gray-400 text-sm mb-4">Issue, merge request, and pipeline operations via glab CLI</p>
-        <div class="flex flex-wrap gap-2">
-          <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">glab_issue</span>
-          <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">glab_mr</span>
-          <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">glab_pipeline</span>
-          <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">glab_auth</span>
+        <div class="grid md:grid-cols-3 gap-4">
+          <div>
+            <p class="text-xs text-gray-500 mb-2 font-semibold">Git</p>
+            <div class="flex flex-wrap gap-2">
+              <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">git_status</span>
+              <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">git_diff</span>
+              <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">git_log</span>
+              <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">git_add</span>
+              <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">git_commit</span>
+              <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">git_checkout</span>
+              <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">git_branch</span>
+              <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">git_stash</span>
+            </div>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500 mb-2 font-semibold">GitHub</p>
+            <div class="flex flex-wrap gap-2">
+              <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">gh_repo</span>
+              <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">gh_issue</span>
+              <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">gh_pr</span>
+              <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">gh_search</span>
+              <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">gh_release</span>
+              <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">gh_workflow</span>
+              <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">gh_run</span>
+              <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">gh_api</span>
+            </div>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500 mb-2 font-semibold">GitLab</p>
+            <div class="flex flex-wrap gap-2">
+              <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">glab_issue</span>
+              <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">glab_mr</span>
+              <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">glab_pipeline</span>
+              <span class="bg-gray-700/50 px-2 py-1 rounded text-xs">glab_auth</span>
+            </div>
+          </div>
         </div>
       </div>
 
