@@ -56,16 +56,15 @@ tags:
 - [architecture] Virtual tools: src/groups.rs with ToolGroup and AgentProfile enums
 - [research] GitHub Copilot found 2-5% benchmark improvement with reduced toolsets
 ## Current Status
-**Phase**: v0.4.0 Development
+**Phase**: v0.4.0 Released
 **Health**: Green
-**Milestone**: Pretty names complete, extended batch operations
+**Milestone**: v0.4.0 deployed to FlakeHub, GitHub, Docker
 
 ## Recent Session
-- Added pretty names to 14 tools: file_read→"File - Read", ast_grep→"Search - AST (ast-grep)", jq→"Text - JSON (jq)", etc.
-- Updated groups.rs tool names to match new pretty names
-- Extended batch support: mkdir, stat, exists, file_edit (in addition to trash, copy, move)
-- Multi-file edit: file_edit now accepts space-separated paths for batch edits across files
-- All batch operations return JSON with per-item success/error and summary counts
+- Released v0.4.0: Dynamic Toolsets & Batch Operations
+- Deployed to FlakeHub, GitHub Releases, Docker (ghcr.io/nacosolutions/modern-cli-mcp:0.4.0)
+- MCP registry job failed (non-blocking, just registry listing)
+- All functional deployments successful
 
 ## Previous Session
 - Implemented Dynamic Toolsets Mode (beta feature)

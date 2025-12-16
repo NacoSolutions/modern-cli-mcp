@@ -10,6 +10,30 @@ tags:
 
 # Changelog: modern-cli-mcp
 
+## [0.4.0] - 2025-12-16
+
+### Added
+- Dynamic Toolsets Mode (beta):
+  - `--dynamic-toolsets` flag to start with only meta-tools
+  - `--toolsets` flag to pre-enable specific groups
+  - `MCP_DYNAMIC_TOOLSETS` / `MCP_TOOLSETS` environment variables
+  - `list_available_toolsets`, `get_toolset_tools`, `enable_toolset` meta-tools
+- Extended batch operations:
+  - `fs_mkdir` - create multiple directories at once
+  - `fs_stat` - get stats for multiple paths
+  - `fs_exists` - check multiple paths in one call
+  - `file_edit` - apply same replacement across multiple files
+- Container tools: compose (podman-compose + docker compose v2), buildx, buildah
+
+### Changed
+- All 104+ tools now have consistent "Category - Name (tool)" pretty names
+- Batch operations return JSON with summary counts and per-item results
+- Git tools path parameter clarified: uses `git -C <path>` behavior
+- trash, copy, move tools now accept space-separated paths
+
+### Fixed
+- Tool name consistency across groups.rs and tool definitions
+
 ## [0.3.0] - 2025-12-12
 
 ### Added
