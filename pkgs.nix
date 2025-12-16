@@ -72,6 +72,7 @@
     # Containers
     podman # Rootless containers
     podman-compose # Multi-container orchestration
+    docker # Docker daemon + compose v2 plugin
     buildah # OCI image builder
     docker-buildx # Multi-platform builds
     dive # Image layer analysis

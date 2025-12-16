@@ -56,18 +56,33 @@ tags:
 - [architecture] Virtual tools: src/groups.rs with ToolGroup and AgentProfile enums
 - [research] GitHub Copilot found 2-5% benchmark improvement with reduced toolsets
 ## Current Status
-
 **Phase**: v0.4.0 Development
 **Health**: Green
-**Milestone**: All 15 grouped tools implemented
+**Milestone**: Pretty names complete, extended batch operations
 
 ## Recent Session
-- Implemented all 15 grouped tools (filesystem + 14 remaining)
-- Fixed 5 compilation errors: rg, http, system_info, difft, mcp_auth_check method names
-- All tests pass (7 unit + 8 integration)
-- Groups: filesystem, file_ops, search, text, git, github, gitlab, kubernetes, container, network, system, archive, reference, diff, mcp
-- Total grouped tools: 15 (consolidating 106+ individual tools into subcommands)
+- Added pretty names to 14 tools: file_read→"File - Read", ast_grep→"Search - AST (ast-grep)", jq→"Text - JSON (jq)", etc.
+- Updated groups.rs tool names to match new pretty names
+- Extended batch support: mkdir, stat, exists, file_edit (in addition to trash, copy, move)
+- Multi-file edit: file_edit now accepts space-separated paths for batch edits across files
+- All batch operations return JSON with per-item success/error and summary counts
+
+## Previous Session
+- Implemented Dynamic Toolsets Mode (beta feature)
+- New CLI flags: `--dynamic-toolsets`, `--toolsets`
+- Environment variables: `MCP_DYNAMIC_TOOLSETS`, `MCP_TOOLSETS`
+- New tools: `list_available_toolsets`, `get_toolset_tools`, `enable_toolset`
 
 ## Relations
 
 - blocked_by [[CI Pipeline]] (awaiting verification)
+
+- [done] Dynamic Toolsets Mode (beta): `--dynamic-toolsets` flag, `--toolsets` pre-enable, env vars support
+- [done] Meta-tools for toolset management: `list_available_toolsets`, `get_toolset_tools`, `enable_toolset`
+- [done] Custom `ServerHandler::list_tools` for dynamic tool filtering
+- [done] Thread-safe toolset state with `parking_lot::RwLock<HashSet<ToolGroup>>`
+- [done] Batch operations for trash, copy, move tools (space-separated paths)
+- [done] Improved git tools path descriptions (clarifies `-C <path>` behavior)
+- [done] Pretty names for all 104+ tools (consistent "Category - Name (tool)" format)
+- [done] Extended batch support: mkdir, stat, exists, file_edit
+- [done] Multi-file edit capability for applying same replacement across files

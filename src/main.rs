@@ -6,7 +6,7 @@ mod tools;
 
 use anyhow::Result;
 use clap::Parser;
-use groups::AgentProfile;
+use groups::{AgentProfile, ToolGroup};
 use rmcp::{transport::stdio, ServiceExt};
 use tools::ModernCliTools;
 use tracing_subscriber::{self, EnvFilter};
@@ -20,6 +20,16 @@ struct Args {
     /// curator, docs, lint, api, dev-deploy, full
     #[arg(short, long)]
     profile: Option<String>,
+
+    /// Enable dynamic toolsets (beta). Starts with only meta-tools exposed.
+    /// Use enable_toolset to activate tool groups on demand.
+    #[arg(long, env = "MCP_DYNAMIC_TOOLSETS")]
+    dynamic_toolsets: bool,
+
+    /// Tool groups to pre-enable with --dynamic-toolsets (comma-separated).
+    /// Example: --toolsets filesystem,git,search
+    #[arg(long, env = "MCP_TOOLSETS", value_delimiter = ',')]
+    toolsets: Option<Vec<String>>,
 
     /// List available profiles and exit.
     #[arg(long)]
@@ -87,8 +97,13 @@ async fn main() -> Result<()> {
         .with_ansi(false)
         .init();
 
-    // Parse profile if provided
-    let profile = if let Some(p) = args.profile {
+    // Parse profile if provided (mutually exclusive with dynamic_toolsets)
+    let profile = if args.dynamic_toolsets {
+        if args.profile.is_some() {
+            eprintln!("Warning: --profile is ignored when --dynamic-toolsets is enabled");
+        }
+        None
+    } else if let Some(p) = args.profile {
         match p.parse::<AgentProfile>() {
             Ok(profile) => {
                 tracing::info!(
@@ -109,14 +124,50 @@ async fn main() -> Result<()> {
         None
     };
 
+    // Parse pre-enabled toolsets for dynamic mode
+    let pre_enabled_toolsets: Vec<ToolGroup> = if args.dynamic_toolsets {
+        args.toolsets
+            .unwrap_or_default()
+            .iter()
+            .filter_map(|s| match s.parse::<ToolGroup>() {
+                Ok(g) => Some(g),
+                Err(e) => {
+                    eprintln!("Warning: {}", e);
+                    None
+                }
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
+
+    if args.dynamic_toolsets {
+        if pre_enabled_toolsets.is_empty() {
+            tracing::info!(
+                "Dynamic toolsets enabled. Starting with meta-tools only. Use enable_toolset to activate groups."
+            );
+        } else {
+            tracing::info!(
+                "Dynamic toolsets enabled with {} pre-enabled groups: {}",
+                pre_enabled_toolsets.len(),
+                pre_enabled_toolsets
+                    .iter()
+                    .map(|g| g.id())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
+        }
+    }
+
     tracing::info!("Starting Modern CLI Tools MCP server");
 
-    let service = ModernCliTools::new(profile)
-        .serve(stdio())
-        .await
-        .inspect_err(|e| {
-            tracing::error!("Server error: {:?}", e);
-        })?;
+    let service =
+        ModernCliTools::new_with_config(profile, args.dynamic_toolsets, pre_enabled_toolsets)
+            .serve(stdio())
+            .await
+            .inspect_err(|e| {
+                tracing::error!("Server error: {:?}", e);
+            })?;
 
     service.waiting().await?;
     Ok(())

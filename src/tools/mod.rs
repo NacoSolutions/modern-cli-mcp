@@ -9,13 +9,38 @@ pub use executor::{
 use crate::groups::{AgentProfile, ToolGroup};
 use crate::ignore::AgentIgnore;
 use crate::state::{ContextScope, StateManager, TaskStatus};
+use parking_lot::RwLock;
 use rmcp::{
-    handler::server::{router::tool::ToolRouter, wrapper::Parameters},
-    model::{CallToolResult, Content, ServerCapabilities, ServerInfo},
-    schemars, tool, tool_handler, tool_router, ErrorData, ServerHandler,
+    handler::server::{router::tool::ToolRouter, tool::ToolCallContext, wrapper::Parameters},
+    model::{
+        CallToolRequestParam, CallToolResult, Content, ListToolsResult, PaginatedRequestParam,
+        ServerCapabilities, ServerInfo, Tool,
+    },
+    schemars,
+    service::RequestContext,
+    tool, tool_router, ErrorData, RoleServer, ServerHandler,
 };
 use serde::Deserialize;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
+
+/// Configuration for dynamic toolset mode
+#[derive(Debug, Clone)]
+pub struct DynamicToolsetConfig {
+    /// Whether dynamic toolsets mode is enabled
+    pub enabled: bool,
+    /// Currently enabled tool groups
+    pub enabled_groups: Arc<RwLock<HashSet<ToolGroup>>>,
+}
+
+impl Default for DynamicToolsetConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            enabled_groups: Arc::new(RwLock::new(HashSet::new())),
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct ModernCliTools {
@@ -24,6 +49,10 @@ pub struct ModernCliTools {
     state: Arc<StateManager>,
     profile: Option<AgentProfile>,
     ignore: Arc<AgentIgnore>,
+    /// Dynamic toolset configuration (beta feature)
+    dynamic_config: DynamicToolsetConfig,
+    /// Reverse lookup: tool name -> group (for filtering)
+    tool_to_group: HashMap<&'static str, ToolGroup>,
 }
 
 // ============================================================================
@@ -141,7 +170,9 @@ pub struct DustRequest {
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct TrashRequest {
-    #[schemars(description = "File or directory path to trash")]
+    #[schemars(
+        description = "File or directory path to trash (supports multiple space-separated paths)"
+    )]
     pub path: String,
     #[schemars(description = "Custom graveyard directory (default: ~/.graveyard)")]
     pub graveyard: Option<String>,
@@ -504,7 +535,9 @@ pub struct GitGroupRequest {
     )]
     pub command: String,
 
-    #[schemars(description = "Working directory path")]
+    #[schemars(
+        description = "Git repository path (runs git -C <path>). Defaults to current directory."
+    )]
     pub path: Option<String>,
 
     // status options
@@ -1806,6 +1839,8 @@ pub struct ComposeRequest {
         description = "Compose subcommand: up, down, ps, logs, build, pull, restart, stop, start"
     )]
     pub command: String,
+    #[schemars(description = "Container runtime: podman (default, rootless) or docker")]
+    pub runtime: Option<String>,
     #[schemars(description = "Path to compose file (default: docker-compose.yml)")]
     pub file: Option<String>,
     #[schemars(description = "Service name(s) to target (space-separated)")]
@@ -2070,7 +2105,9 @@ pub struct GlabAuthLoginRequest {
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct GitStatusRequest {
-    #[schemars(description = "Working directory path")]
+    #[schemars(
+        description = "Git repository path (runs git -C <path>). Defaults to current directory."
+    )]
     pub path: Option<String>,
     #[schemars(description = "Short format output")]
     pub short: Option<bool>,
@@ -2080,7 +2117,9 @@ pub struct GitStatusRequest {
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct GitAddRequest {
-    #[schemars(description = "Working directory path")]
+    #[schemars(
+        description = "Git repository path (runs git -C <path>). Defaults to current directory."
+    )]
     pub path: Option<String>,
     #[schemars(description = "Files to add (space-separated paths, or '.' for all)")]
     pub files: String,
@@ -2090,7 +2129,9 @@ pub struct GitAddRequest {
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct GitCommitRequest {
-    #[schemars(description = "Working directory path")]
+    #[schemars(
+        description = "Git repository path (runs git -C <path>). Defaults to current directory."
+    )]
     pub path: Option<String>,
     #[schemars(description = "Commit message")]
     pub message: String,
@@ -2102,7 +2143,9 @@ pub struct GitCommitRequest {
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct GitBranchRequest {
-    #[schemars(description = "Working directory path")]
+    #[schemars(
+        description = "Git repository path (runs git -C <path>). Defaults to current directory."
+    )]
     pub path: Option<String>,
     #[schemars(description = "Subcommand: list, create, delete, rename")]
     pub command: String,
@@ -2116,7 +2159,9 @@ pub struct GitBranchRequest {
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct GitCheckoutRequest {
-    #[schemars(description = "Working directory path")]
+    #[schemars(
+        description = "Git repository path (runs git -C <path>). Defaults to current directory."
+    )]
     pub path: Option<String>,
     #[schemars(description = "Branch name, commit, or tag to checkout")]
     pub target: String,
@@ -2128,7 +2173,9 @@ pub struct GitCheckoutRequest {
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct GitLogRequest {
-    #[schemars(description = "Working directory path")]
+    #[schemars(
+        description = "Git repository path (runs git -C <path>). Defaults to current directory."
+    )]
     pub path: Option<String>,
     #[schemars(description = "Number of commits to show")]
     pub count: Option<u32>,
@@ -2142,7 +2189,9 @@ pub struct GitLogRequest {
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct GitStashRequest {
-    #[schemars(description = "Working directory path")]
+    #[schemars(
+        description = "Git repository path (runs git -C <path>). Defaults to current directory."
+    )]
     pub path: Option<String>,
     #[schemars(description = "Subcommand: push, pop, list, drop, apply, show")]
     pub command: String,
@@ -2204,15 +2253,19 @@ pub struct FileWriteRequest {
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct FileEditRequest {
-    #[schemars(description = "Absolute path to file")]
+    #[schemars(
+        description = "Absolute path(s) to file - space-separated for batch edit across multiple files"
+    )]
     pub path: String,
-    #[schemars(description = "Text to find (must be unique in file)")]
+    #[schemars(
+        description = "Text to find (must be unique in each file unless replace_all is true)"
+    )]
     pub old_text: String,
     #[schemars(description = "Text to replace with")]
     pub new_text: String,
     #[schemars(description = "Replace all occurrences (default: false, fails if not unique)")]
     pub replace_all: Option<bool>,
-    #[schemars(description = "If true, backup file to graveyard before editing")]
+    #[schemars(description = "If true, backup files to graveyard before editing")]
     pub backup: Option<bool>,
     #[schemars(description = "Custom graveyard directory for backup")]
     pub graveyard: Option<String>,
@@ -2242,7 +2295,7 @@ pub struct FilePatchRequest {
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct FsMkdirRequest {
-    #[schemars(description = "Directory path to create")]
+    #[schemars(description = "Directory path(s) to create - space-separated for multiple")]
     pub path: String,
     #[schemars(description = "Create parent directories (default: true)")]
     pub parents: Option<bool>,
@@ -2250,9 +2303,9 @@ pub struct FsMkdirRequest {
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct FsCopyRequest {
-    #[schemars(description = "Source path")]
+    #[schemars(description = "Source path(s) - space-separated for multiple files")]
     pub source: String,
-    #[schemars(description = "Destination path")]
+    #[schemars(description = "Destination path (must be directory if multiple sources)")]
     pub dest: String,
     #[schemars(description = "Copy directories recursively")]
     pub recursive: Option<bool>,
@@ -2264,9 +2317,9 @@ pub struct FsCopyRequest {
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct FsMoveRequest {
-    #[schemars(description = "Source path")]
+    #[schemars(description = "Source path(s) - space-separated for multiple files")]
     pub source: String,
-    #[schemars(description = "Destination path")]
+    #[schemars(description = "Destination path (must be directory if multiple sources)")]
     pub dest: String,
     #[schemars(description = "If true and dest exists, move dest to graveyard before overwriting")]
     pub safe_overwrite: Option<bool>,
@@ -2278,13 +2331,13 @@ pub struct FsMoveRequest {
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct FsStatRequest {
-    #[schemars(description = "Path to get info for")]
+    #[schemars(description = "Path(s) to get info for - space-separated for multiple")]
     pub path: String,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct FsExistsRequest {
-    #[schemars(description = "Path to check")]
+    #[schemars(description = "Path(s) to check - space-separated for multiple")]
     pub path: String,
 }
 
@@ -2391,22 +2444,103 @@ pub struct ExpandToolsRequest {
     pub group: String,
 }
 
+// --- Dynamic Toolsets (Beta) ---
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct GetToolsetToolsRequest {
+    #[schemars(
+        description = "Toolset name to get tools for. Available: filesystem, file_ops, search, \
+        text, git, github, gitlab, kubernetes, container, network, system, archive, reference, diff, mcp"
+    )]
+    pub toolset: String,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct EnableToolsetRequest {
+    #[schemars(
+        description = "Toolset name to enable. Use 'all' to enable all toolsets. \
+        Available: filesystem, file_ops, search, text, git, github, gitlab, kubernetes, \
+        container, network, system, archive, reference, diff, mcp"
+    )]
+    pub toolset: String,
+}
+
 // ============================================================================
 // TOOL IMPLEMENTATIONS
 // ============================================================================
 
 #[tool_router]
 impl ModernCliTools {
+    /// Create a new ModernCliTools instance with default settings (all tools enabled).
+    #[allow(dead_code)]
     pub fn new(profile: Option<AgentProfile>) -> Self {
+        Self::new_with_config(profile, false, Vec::new())
+    }
+
+    pub fn new_with_config(
+        profile: Option<AgentProfile>,
+        dynamic_toolsets: bool,
+        pre_enabled_groups: Vec<ToolGroup>,
+    ) -> Self {
         let state = StateManager::new().expect("Failed to initialize state manager");
         let ignore = AgentIgnore::new().unwrap_or_default();
+
+        // Initialize enabled groups
+        let enabled_groups: HashSet<ToolGroup> = if dynamic_toolsets {
+            pre_enabled_groups.into_iter().collect()
+        } else {
+            // When not in dynamic mode, all groups are implicitly enabled
+            ToolGroup::ALL.iter().copied().collect()
+        };
+
+        // Build reverse lookup: tool name -> group
+        let mut tool_to_group = HashMap::new();
+        for group in ToolGroup::ALL {
+            for tool_name in group.tools() {
+                tool_to_group.insert(*tool_name, *group);
+            }
+        }
+
         Self {
             tool_router: Self::tool_router(),
             executor: CommandExecutor::new(),
             state: Arc::new(state),
             profile,
             ignore: Arc::new(ignore),
+            dynamic_config: DynamicToolsetConfig {
+                enabled: dynamic_toolsets,
+                enabled_groups: Arc::new(RwLock::new(enabled_groups)),
+            },
+            tool_to_group,
         }
+    }
+
+    /// Check if a tool group is currently enabled
+    fn is_group_enabled(&self, group: ToolGroup) -> bool {
+        if !self.dynamic_config.enabled {
+            return true; // All groups enabled when not in dynamic mode
+        }
+        self.dynamic_config.enabled_groups.read().contains(&group)
+    }
+
+    /// Enable a tool group (for dynamic toolsets mode)
+    fn enable_group(&self, group: ToolGroup) -> bool {
+        if !self.dynamic_config.enabled {
+            return false; // No-op when not in dynamic mode
+        }
+        let mut groups = self.dynamic_config.enabled_groups.write();
+        groups.insert(group)
+    }
+
+    /// Get the list of currently enabled groups
+    #[allow(dead_code)]
+    fn get_enabled_groups(&self) -> Vec<ToolGroup> {
+        self.dynamic_config
+            .enabled_groups
+            .read()
+            .iter()
+            .copied()
+            .collect()
     }
 
     // ========================================================================
@@ -2675,7 +2809,7 @@ impl ModernCliTools {
 
     #[tool(
         name = "Filesystem - Trash (rip)",
-        description = "Move file or directory to graveyard (safe delete using rip)."
+        description = "Move file(s) or directory(s) to graveyard (safe delete using rip). Supports multiple space-separated paths."
     )]
     async fn trash_put(
         &self,
@@ -2685,18 +2819,24 @@ impl ModernCliTools {
         if let Some(graveyard) = &req.graveyard {
             args.push(format!("--graveyard={}", graveyard));
         }
-        args.push(req.path.clone());
+
+        // Support multiple space-separated paths
+        let paths: Vec<&str> = req.path.split_whitespace().collect();
+        for path in &paths {
+            args.push((*path).to_string());
+        }
 
         let args_ref: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
         match self.executor.run("rip", &args_ref).await {
             Ok(output) => Ok(CallToolResult::success(vec![Content::text(
                 if output.success {
-                    let graveyard_info = req
-                        .graveyard
-                        .as_ref()
-                        .map(|g| format!(" (graveyard: {})", g))
-                        .unwrap_or_default();
-                    format!("Moved '{}' to graveyard{}", req.path, graveyard_info)
+                    let result = serde_json::json!({
+                        "success": true,
+                        "paths": paths,
+                        "count": paths.len(),
+                        "graveyard": req.graveyard.as_deref().unwrap_or("~/.graveyard")
+                    });
+                    result.to_string()
                 } else {
                     output.to_result_string()
                 },
@@ -4962,6 +5102,7 @@ impl ModernCliTools {
     }
 
     #[tool(
+        name = "Search - AST (ast-grep)",
         description = "Search code with ast-grep (sg) - AST-based structural search. \
         Find code patterns semantically, not just textually."
     )]
@@ -5008,6 +5149,7 @@ impl ModernCliTools {
     // ========================================================================
 
     #[tool(
+        name = "Text - Substitute (sd)",
         description = "Find and replace text with sd (modern sed replacement). \
         Simpler syntax than sed, supports regex and literal modes."
     )]
@@ -5038,6 +5180,7 @@ impl ModernCliTools {
     }
 
     #[tool(
+        name = "Text - JSON (jq)",
         description = "Process JSON with jq - the powerful command-line JSON processor. \
         Filter, transform, and query JSON data."
     )]
@@ -5075,6 +5218,7 @@ impl ModernCliTools {
     }
 
     #[tool(
+        name = "Text - YAML (yq)",
         description = "Process YAML/JSON/XML/CSV with yq - portable command-line processor. \
         Query and transform data in various formats."
     )]
@@ -5145,6 +5289,7 @@ impl ModernCliTools {
     }
 
     #[tool(
+        name = "Text - Cut (hck)",
         description = "Extract fields with hck (hack) - a faster cut replacement. \
         Extract columns from delimited text."
     )]
@@ -5181,6 +5326,7 @@ impl ModernCliTools {
     // ========================================================================
 
     #[tool(
+        name = "System - Processes (procs)",
         description = "List and filter processes with procs (modern ps replacement). \
         Features: tree view, sorting, filtering, colorful output."
     )]
@@ -5211,6 +5357,7 @@ impl ModernCliTools {
     }
 
     #[tool(
+        name = "System - Code Stats (tokei)",
         description = "Count lines of code with tokei (fast code statistics). \
         Recognizes 150+ languages, shows code, comments, blanks."
     )]
@@ -5398,8 +5545,11 @@ impl ModernCliTools {
         }
     }
 
-    #[tool(description = "DNS lookup with doggo (modern dig replacement). \
-        Features: colorful output, DNS over HTTPS/TLS, multiple record types.")]
+    #[tool(
+        name = "Network - DNS (doggo)",
+        description = "DNS lookup with doggo (modern dig replacement). \
+        Features: colorful output, DNS over HTTPS/TLS, multiple record types."
+    )]
     async fn dns(
         &self,
         Parameters(req): Parameters<DnsRequest>,
@@ -6560,6 +6710,7 @@ impl ModernCliTools {
     }
 
     #[tool(
+        name = "Text - HTML Query (htmlq)",
         description = "Query HTML with CSS selectors using htmlq (jq for HTML). \
         Extract elements, attributes, or text content."
     )]
@@ -6662,6 +6813,7 @@ impl ModernCliTools {
     }
 
     #[tool(
+        name = "Text - Universal (dasel)",
         description = "Query JSON/YAML/TOML/XML with dasel (universal selector). \
         Single tool for multiple data formats. Returns JSON by default."
     )]
@@ -6700,6 +6852,7 @@ impl ModernCliTools {
     // ========================================================================
 
     #[tool(
+        name = "Container - Podman",
         description = "Podman container operations. Returns JSON for inspect, ps, images. \
         Subcommands: ps, images, inspect, logs, pull, run, stop, rm, rmi, build."
     )]
@@ -6863,15 +7016,23 @@ impl ModernCliTools {
 
     #[tool(
         name = "Container - Compose",
-        description = "Multi-container orchestration with podman-compose. \
-        Manage services defined in docker-compose.yml files. \
+        description = "Multi-container orchestration. Supports both podman-compose (default, rootless) \
+        and docker compose (v2). Manage services defined in docker-compose.yml files. \
         Subcommands: up, down, ps, logs, build, pull, restart, stop, start."
     )]
     async fn compose(
         &self,
         Parameters(req): Parameters<ComposeRequest>,
     ) -> Result<CallToolResult, ErrorData> {
+        let runtime = req.runtime.as_deref().unwrap_or("podman");
+        let use_docker = runtime == "docker";
+
         let mut args: Vec<String> = vec![];
+
+        // For docker, we use `docker compose` (v2 plugin)
+        if use_docker {
+            args.push("compose".into());
+        }
 
         if let Some(ref file) = req.file {
             args.push("-f".into());
@@ -6916,7 +7077,12 @@ impl ModernCliTools {
         }
 
         let args_ref: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
-        match self.executor.run("podman-compose", &args_ref).await {
+        let cmd = if use_docker {
+            "docker"
+        } else {
+            "podman-compose"
+        };
+        match self.executor.run(cmd, &args_ref).await {
             Ok(output) => Ok(CallToolResult::success(vec![Content::text(
                 output.to_result_string(),
             )])),
@@ -7096,6 +7262,7 @@ impl ModernCliTools {
     // ========================================================================
 
     #[tool(
+        name = "Kubernetes - Get",
         description = "Get Kubernetes resources. Returns JSON by default for AI parsing. \
         Resources: pods, deployments, services, configmaps, secrets, nodes, events."
     )]
@@ -7477,6 +7644,7 @@ impl ModernCliTools {
     }
 
     #[tool(
+        name = "Shell - Nix",
         description = "Execute command in a Nix devshell. Provides access to all tools defined in the \
         flake's devShell. Useful for running commands with specific development dependencies."
     )]
@@ -8324,6 +8492,7 @@ impl ModernCliTools {
     // ========================================================================
 
     #[tool(
+        name = "File - Read",
         description = "Read file contents. Returns raw text with optional line offset/limit. \
         Supports any text file format."
     )]
@@ -8466,8 +8635,8 @@ impl ModernCliTools {
 
     #[tool(
         name = "File - Edit",
-        description = "Edit a file by replacing text. The old_text must be unique in the file \
-        unless replace_all is true. Use backup=true to save original to graveyard first."
+        description = "Edit file(s) by replacing text. Supports batch edits across multiple space-separated paths. \
+        The old_text must be unique in each file unless replace_all is true. Use backup=true to save originals to graveyard."
     )]
     async fn file_edit(
         &self,
@@ -8475,91 +8644,121 @@ impl ModernCliTools {
     ) -> Result<CallToolResult, ErrorData> {
         use tokio::fs;
 
-        let path = std::path::Path::new(&req.path);
-        let mut backed_up = false;
+        let paths: Vec<&str> = req.path.split_whitespace().collect();
+        let do_backup = req.backup.unwrap_or(false);
+        let replace_all = req.replace_all.unwrap_or(false);
+        let mut results = Vec::new();
 
-        if !path.is_absolute() {
-            return Ok(CallToolResult::error(vec![Content::text(
-                "Path must be absolute",
-            )]));
-        }
+        for path_str in &paths {
+            let path = std::path::Path::new(path_str);
+            let mut file_result = serde_json::json!({
+                "path": path_str,
+                "success": false
+            });
 
-        // Check .agentignore
-        if let Err(msg) = self.ignore.validate_path(path) {
-            return Ok(CallToolResult::error(vec![Content::text(msg)]));
-        }
+            // Validate path
+            if !path.is_absolute() {
+                file_result["error"] = "Path must be absolute".into();
+                results.push(file_result);
+                continue;
+            }
 
-        // Backup: if file exists and backup is true, copy to backup location
-        if req.backup.unwrap_or(false) && path.exists() {
-            // Create backup path with timestamp
-            let timestamp = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .map(|d| d.as_secs())
-                .unwrap_or(0);
-            let backup_path = if let Some(graveyard) = &req.graveyard {
-                let filename = path.file_name().unwrap_or_default().to_string_lossy();
-                format!("{}/{}.{}", graveyard, filename, timestamp)
-            } else {
-                format!("{}.bak.{}", req.path, timestamp)
+            // Check .agentignore
+            if let Err(msg) = self.ignore.validate_path(path) {
+                file_result["error"] = msg.into();
+                results.push(file_result);
+                continue;
+            }
+
+            // Backup if requested
+            let mut backed_up = false;
+            if do_backup && path.exists() {
+                let timestamp = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map(|d| d.as_secs())
+                    .unwrap_or(0);
+                let backup_path = if let Some(graveyard) = &req.graveyard {
+                    let filename = path.file_name().unwrap_or_default().to_string_lossy();
+                    format!("{}/{}.{}", graveyard, filename, timestamp)
+                } else {
+                    format!("{}.bak.{}", path_str, timestamp)
+                };
+
+                match fs::copy(path, &backup_path).await {
+                    Ok(_) => backed_up = true,
+                    Err(e) => {
+                        file_result["error"] = format!("Backup failed: {}", e).into();
+                        results.push(file_result);
+                        continue;
+                    }
+                }
+            }
+
+            // Read file
+            let content = match fs::read_to_string(path).await {
+                Ok(c) => c,
+                Err(e) => {
+                    file_result["error"] = format!("Read failed: {}", e).into();
+                    results.push(file_result);
+                    continue;
+                }
             };
 
-            match fs::copy(path, &backup_path).await {
-                Ok(_) => {
-                    backed_up = true;
+            // Count and validate occurrences
+            let occurrences = content.matches(&req.old_text).count();
+
+            if occurrences == 0 {
+                file_result["error"] = "old_text not found".into();
+                results.push(file_result);
+                continue;
+            }
+
+            if occurrences > 1 && !replace_all {
+                file_result["error"] =
+                    format!("old_text found {} times, use replace_all=true", occurrences).into();
+                results.push(file_result);
+                continue;
+            }
+
+            // Apply replacement
+            let new_content = content.replace(&req.old_text, &req.new_text);
+
+            match fs::write(path, &new_content).await {
+                Ok(()) => {
+                    file_result["success"] = true.into();
+                    file_result["replacements"] = occurrences.into();
+                    file_result["backed_up"] = backed_up.into();
                 }
                 Err(e) => {
-                    return Ok(CallToolResult::error(vec![Content::text(format!(
-                        "Failed to backup file: {}",
-                        e
-                    ))]));
+                    file_result["error"] = format!("Write failed: {}", e).into();
                 }
             }
+
+            results.push(file_result);
         }
 
-        let content = match fs::read_to_string(path).await {
-            Ok(c) => c,
-            Err(e) => {
-                return Ok(CallToolResult::error(vec![Content::text(format!(
-                    "Failed to read file: {}",
-                    e
-                ))]))
-            }
+        let success_count = results
+            .iter()
+            .filter(|r| r["success"].as_bool() == Some(true))
+            .count();
+        let failed_count = results
+            .iter()
+            .filter(|r| r["success"].as_bool() == Some(false))
+            .count();
+
+        let response = if paths.len() == 1 {
+            results.into_iter().next().unwrap()
+        } else {
+            serde_json::json!({
+                "edited": success_count,
+                "failed": failed_count,
+                "results": results
+            })
         };
 
-        let occurrences = content.matches(&req.old_text).count();
-
-        if occurrences == 0 {
-            return Ok(CallToolResult::error(vec![Content::text(
-                "old_text not found in file",
-            )]));
-        }
-
-        if occurrences > 1 && !req.replace_all.unwrap_or(false) {
-            return Ok(CallToolResult::error(vec![Content::text(format!(
-                "old_text found {} times. Use replace_all=true or provide more context to make it unique.",
-                occurrences
-            ))]));
-        }
-
-        let new_content = content.replace(&req.old_text, &req.new_text);
-
-        match fs::write(path, &new_content).await {
-            Ok(()) => {
-                let result = serde_json::json!({
-                    "success": true,
-                    "path": req.path,
-                    "replacements": occurrences,
-                    "backed_up": backed_up
-                });
-                Ok(CallToolResult::success(vec![Content::text(
-                    result.to_string(),
-                )]))
-            }
-            Err(e) => Ok(CallToolResult::error(vec![Content::text(format!(
-                "Failed to write file: {}",
-                e
-            ))])),
-        }
+        Ok(CallToolResult::success(vec![Content::text(
+            response.to_string(),
+        )]))
     }
 
     #[tool(
@@ -8733,34 +8932,51 @@ impl ModernCliTools {
     ) -> Result<CallToolResult, ErrorData> {
         use tokio::fs;
 
-        let path = std::path::Path::new(&req.path);
+        let paths: Vec<&str> = req.path.split_whitespace().collect();
+        let create_parents = req.parents.unwrap_or(true);
 
-        let result = if req.parents.unwrap_or(true) {
-            fs::create_dir_all(path).await
-        } else {
-            fs::create_dir(path).await
-        };
+        let mut results = Vec::new();
 
-        match result {
-            Ok(()) => {
-                let result = serde_json::json!({
-                    "success": true,
-                    "path": req.path
-                });
-                Ok(CallToolResult::success(vec![Content::text(
-                    result.to_string(),
-                )]))
+        for path_str in &paths {
+            let path = std::path::Path::new(path_str);
+
+            let result = if create_parents {
+                fs::create_dir_all(path).await
+            } else {
+                fs::create_dir(path).await
+            };
+
+            match result {
+                Ok(()) => {
+                    results.push(serde_json::json!({
+                        "path": path_str,
+                        "success": true
+                    }));
+                }
+                Err(e) => {
+                    results.push(serde_json::json!({
+                        "path": path_str,
+                        "success": false,
+                        "error": e.to_string()
+                    }));
+                }
             }
-            Err(e) => Ok(CallToolResult::error(vec![Content::text(format!(
-                "Failed to create directory: {}",
-                e
-            ))])),
         }
+
+        let response = serde_json::json!({
+            "created": results.iter().filter(|r| r["success"].as_bool() == Some(true)).count(),
+            "failed": results.iter().filter(|r| r["success"].as_bool() == Some(false)).count(),
+            "results": results
+        });
+
+        Ok(CallToolResult::success(vec![Content::text(
+            response.to_string(),
+        )]))
     }
 
     #[tool(
         name = "Filesystem - Copy",
-        description = "Copy a file or directory. Use safe_overwrite=true to backup dest to graveyard before overwriting."
+        description = "Copy file(s) or directory(s). Supports multiple space-separated sources. Use safe_overwrite=true to backup dest to graveyard before overwriting."
     )]
     async fn fs_copy(
         &self,
@@ -8768,108 +8984,155 @@ impl ModernCliTools {
     ) -> Result<CallToolResult, ErrorData> {
         use tokio::fs;
 
-        let source = std::path::Path::new(&req.source);
+        // Parse multiple sources (space-separated)
+        let sources: Vec<&str> = req.source.split_whitespace().collect();
         let dest = std::path::Path::new(&req.dest);
 
-        // Check .agentignore for both source and dest
-        if let Err(msg) = self.ignore.validate_path(source) {
-            return Ok(CallToolResult::error(vec![Content::text(msg)]));
-        }
+        // Validate dest
         if let Err(msg) = self.ignore.validate_path(dest) {
             return Ok(CallToolResult::error(vec![Content::text(msg)]));
         }
 
-        let mut graveyarded = false;
-
-        // Safe overwrite: if dest exists and safe_overwrite is true, rip it first
-        if req.safe_overwrite.unwrap_or(false) && dest.exists() {
-            let mut rip_args: Vec<String> = vec![];
-            if let Some(graveyard) = &req.graveyard {
-                rip_args.push(format!("--graveyard={}", graveyard));
-            }
-            rip_args.push(req.dest.clone());
-
-            let args_ref: Vec<&str> = rip_args.iter().map(|s| s.as_str()).collect();
-            match self.executor.run("rip", &args_ref).await {
-                Ok(output) if output.success => {
-                    graveyarded = true;
-                }
-                Ok(output) => {
-                    return Ok(CallToolResult::error(vec![Content::text(format!(
-                        "Failed to backup dest to graveyard: {}",
-                        output.to_result_string()
-                    ))]));
-                }
-                Err(e) => {
-                    return Ok(CallToolResult::error(vec![Content::text(format!(
-                        "Failed to backup dest to graveyard: {}",
-                        e
-                    ))]));
-                }
-            }
-        }
-
-        let metadata = match fs::metadata(source).await {
-            Ok(m) => m,
-            Err(e) => {
-                return Ok(CallToolResult::error(vec![Content::text(format!(
-                    "Source not found: {}",
-                    e
-                ))]))
-            }
-        };
-
-        if metadata.is_dir() {
-            if !req.recursive.unwrap_or(false) {
+        // For multiple sources, dest must be an existing directory
+        if sources.len() > 1 {
+            if !dest.is_dir() {
                 return Ok(CallToolResult::error(vec![Content::text(
-                    "Source is a directory. Use recursive=true to copy directories.",
+                    "Multiple sources specified but destination is not a directory",
                 )]));
             }
-            // Native recursive copy
-            match copy_dir_recursive(source, dest).await {
-                Ok(count) => {
-                    let result = serde_json::json!({
-                        "success": true,
-                        "source": req.source,
-                        "dest": req.dest,
-                        "type": "directory",
-                        "files_copied": count,
-                        "graveyarded_dest": graveyarded
-                    });
-                    Ok(CallToolResult::success(vec![Content::text(
-                        result.to_string(),
-                    )]))
-                }
-                Err(e) => Ok(CallToolResult::error(vec![Content::text(format!(
-                    "Failed to copy directory: {}",
-                    e
-                ))])),
+        }
+
+        let mut results: Vec<serde_json::Value> = vec![];
+        let mut graveyarded = false;
+
+        for src_str in &sources {
+            let source = std::path::Path::new(src_str);
+
+            // Check .agentignore
+            if let Err(msg) = self.ignore.validate_path(source) {
+                results.push(serde_json::json!({
+                    "source": src_str,
+                    "success": false,
+                    "error": msg
+                }));
+                continue;
             }
-        } else {
-            match fs::copy(source, dest).await {
-                Ok(bytes) => {
-                    let result = serde_json::json!({
-                        "success": true,
-                        "source": req.source,
-                        "dest": req.dest,
-                        "bytes_copied": bytes,
-                        "graveyarded_dest": graveyarded
-                    });
-                    Ok(CallToolResult::success(vec![Content::text(
-                        result.to_string(),
-                    )]))
+
+            // Determine actual destination
+            let actual_dest = if dest.is_dir() {
+                dest.join(source.file_name().unwrap_or_default())
+            } else {
+                dest.to_path_buf()
+            };
+
+            // Safe overwrite: backup existing dest to graveyard
+            if req.safe_overwrite.unwrap_or(false) && actual_dest.exists() {
+                let mut rip_args: Vec<String> = vec![];
+                if let Some(graveyard) = &req.graveyard {
+                    rip_args.push(format!("--graveyard={}", graveyard));
                 }
-                Err(e) => Ok(CallToolResult::error(vec![Content::text(format!(
-                    "Failed to copy: {}",
-                    e
-                ))])),
+                rip_args.push(actual_dest.to_string_lossy().to_string());
+
+                let args_ref: Vec<&str> = rip_args.iter().map(|s| s.as_str()).collect();
+                match self.executor.run("rip", &args_ref).await {
+                    Ok(output) if output.success => {
+                        graveyarded = true;
+                    }
+                    Ok(output) => {
+                        results.push(serde_json::json!({
+                            "source": src_str,
+                            "success": false,
+                            "error": format!("Failed to backup dest: {}", output.to_result_string())
+                        }));
+                        continue;
+                    }
+                    Err(e) => {
+                        results.push(serde_json::json!({
+                            "source": src_str,
+                            "success": false,
+                            "error": format!("Failed to backup dest: {}", e)
+                        }));
+                        continue;
+                    }
+                }
+            }
+
+            let metadata = match fs::metadata(source).await {
+                Ok(m) => m,
+                Err(e) => {
+                    results.push(serde_json::json!({
+                        "source": src_str,
+                        "success": false,
+                        "error": format!("Source not found: {}", e)
+                    }));
+                    continue;
+                }
+            };
+
+            if metadata.is_dir() {
+                if !req.recursive.unwrap_or(false) {
+                    results.push(serde_json::json!({
+                        "source": src_str,
+                        "success": false,
+                        "error": "Source is a directory. Use recursive=true."
+                    }));
+                    continue;
+                }
+                match copy_dir_recursive(source, &actual_dest).await {
+                    Ok(count) => {
+                        results.push(serde_json::json!({
+                            "source": src_str,
+                            "dest": actual_dest.to_string_lossy(),
+                            "success": true,
+                            "type": "directory",
+                            "files_copied": count,
+                            "graveyarded_dest": graveyarded
+                        }));
+                    }
+                    Err(e) => {
+                        results.push(serde_json::json!({
+                            "source": src_str,
+                            "success": false,
+                            "error": format!("Failed to copy directory: {}", e)
+                        }));
+                    }
+                }
+            } else {
+                match fs::copy(source, &actual_dest).await {
+                    Ok(bytes) => {
+                        results.push(serde_json::json!({
+                            "source": src_str,
+                            "dest": actual_dest.to_string_lossy(),
+                            "success": true,
+                            "bytes_copied": bytes,
+                            "graveyarded_dest": graveyarded
+                        }));
+                    }
+                    Err(e) => {
+                        results.push(serde_json::json!({
+                            "source": src_str,
+                            "success": false,
+                            "error": format!("Failed to copy: {}", e)
+                        }));
+                    }
+                }
             }
         }
+
+        let success_count = results.iter().filter(|r| r["success"] == true).count();
+        let result = serde_json::json!({
+            "total": sources.len(),
+            "success_count": success_count,
+            "results": results
+        });
+        Ok(CallToolResult::success(vec![Content::text(
+            result.to_string(),
+        )]))
     }
 
     #[tool(
         name = "Filesystem - Move",
-        description = "Move or rename a file or directory. Use safe_overwrite=true to backup dest to graveyard before overwriting."
+        description = "Move or rename file(s) or directory(s). Supports multiple space-separated sources. Use safe_overwrite=true to backup dest to graveyard before overwriting."
     )]
     async fn fs_move(
         &self,
@@ -8877,64 +9140,107 @@ impl ModernCliTools {
     ) -> Result<CallToolResult, ErrorData> {
         use tokio::fs;
 
-        let source_path = std::path::Path::new(&req.source);
-        let dest_path = std::path::Path::new(&req.dest);
+        // Parse multiple sources (space-separated)
+        let sources: Vec<&str> = req.source.split_whitespace().collect();
+        let dest = std::path::Path::new(&req.dest);
 
-        // Check .agentignore for both source and dest
-        if let Err(msg) = self.ignore.validate_path(source_path) {
-            return Ok(CallToolResult::error(vec![Content::text(msg)]));
-        }
-        if let Err(msg) = self.ignore.validate_path(dest_path) {
+        // Validate dest
+        if let Err(msg) = self.ignore.validate_path(dest) {
             return Ok(CallToolResult::error(vec![Content::text(msg)]));
         }
 
+        // For multiple sources, dest must be an existing directory
+        if sources.len() > 1 {
+            if !dest.is_dir() {
+                return Ok(CallToolResult::error(vec![Content::text(
+                    "Multiple sources specified but destination is not a directory",
+                )]));
+            }
+        }
+
+        let mut results: Vec<serde_json::Value> = vec![];
         let mut graveyarded = false;
 
-        // Safe overwrite: if dest exists and safe_overwrite is true, rip it first
-        if req.safe_overwrite.unwrap_or(false) && dest_path.exists() {
-            let mut rip_args: Vec<String> = vec![];
-            if let Some(graveyard) = &req.graveyard {
-                rip_args.push(format!("--graveyard={}", graveyard));
-            }
-            rip_args.push(req.dest.clone());
+        for src_str in &sources {
+            let source = std::path::Path::new(src_str);
 
-            let args_ref: Vec<&str> = rip_args.iter().map(|s| s.as_str()).collect();
-            match self.executor.run("rip", &args_ref).await {
-                Ok(output) if output.success => {
-                    graveyarded = true;
+            // Check .agentignore
+            if let Err(msg) = self.ignore.validate_path(source) {
+                results.push(serde_json::json!({
+                    "source": src_str,
+                    "success": false,
+                    "error": msg
+                }));
+                continue;
+            }
+
+            // Determine actual destination
+            let actual_dest = if dest.is_dir() {
+                dest.join(source.file_name().unwrap_or_default())
+            } else {
+                dest.to_path_buf()
+            };
+
+            // Safe overwrite: backup existing dest to graveyard
+            if req.safe_overwrite.unwrap_or(false) && actual_dest.exists() {
+                let mut rip_args: Vec<String> = vec![];
+                if let Some(graveyard) = &req.graveyard {
+                    rip_args.push(format!("--graveyard={}", graveyard));
                 }
-                Ok(output) => {
-                    return Ok(CallToolResult::error(vec![Content::text(format!(
-                        "Failed to backup dest to graveyard: {}",
-                        output.to_result_string()
-                    ))]));
+                rip_args.push(actual_dest.to_string_lossy().to_string());
+
+                let args_ref: Vec<&str> = rip_args.iter().map(|s| s.as_str()).collect();
+                match self.executor.run("rip", &args_ref).await {
+                    Ok(output) if output.success => {
+                        graveyarded = true;
+                    }
+                    Ok(output) => {
+                        results.push(serde_json::json!({
+                            "source": src_str,
+                            "success": false,
+                            "error": format!("Failed to backup dest: {}", output.to_result_string())
+                        }));
+                        continue;
+                    }
+                    Err(e) => {
+                        results.push(serde_json::json!({
+                            "source": src_str,
+                            "success": false,
+                            "error": format!("Failed to backup dest: {}", e)
+                        }));
+                        continue;
+                    }
+                }
+            }
+
+            match fs::rename(source, &actual_dest).await {
+                Ok(()) => {
+                    results.push(serde_json::json!({
+                        "source": src_str,
+                        "dest": actual_dest.to_string_lossy(),
+                        "success": true,
+                        "graveyarded_dest": graveyarded
+                    }));
                 }
                 Err(e) => {
-                    return Ok(CallToolResult::error(vec![Content::text(format!(
-                        "Failed to backup dest to graveyard: {}",
-                        e
-                    ))]));
+                    results.push(serde_json::json!({
+                        "source": src_str,
+                        "success": false,
+                        "error": format!("Failed to move: {}", e)
+                    }));
                 }
             }
         }
 
-        match fs::rename(&req.source, &req.dest).await {
-            Ok(()) => {
-                let result = serde_json::json!({
-                    "success": true,
-                    "source": req.source,
-                    "dest": req.dest,
-                    "graveyarded_dest": graveyarded
-                });
-                Ok(CallToolResult::success(vec![Content::text(
-                    result.to_string(),
-                )]))
-            }
-            Err(e) => Ok(CallToolResult::error(vec![Content::text(format!(
-                "Failed to move: {}",
-                e
-            ))])),
-        }
+        let success_count = results.iter().filter(|r| r["success"] == true).count();
+        let result = serde_json::json!({
+            "total": sources.len(),
+            "success_count": success_count,
+            "results": results
+        });
+        Ok(CallToolResult::success(vec![Content::text(
+            result.to_string(),
+        )]))
     }
 
     #[tool(
@@ -8947,75 +9253,97 @@ impl ModernCliTools {
     ) -> Result<CallToolResult, ErrorData> {
         use tokio::fs;
 
-        match fs::metadata(&req.path).await {
-            Ok(meta) => {
-                let file_type = if meta.is_dir() {
-                    "directory"
-                } else if meta.is_file() {
-                    "file"
-                } else if meta.is_symlink() {
-                    "symlink"
-                } else {
-                    "other"
-                };
+        let paths: Vec<&str> = req.path.split_whitespace().collect();
+        let mut results = Vec::new();
 
-                #[cfg(unix)]
-                let permissions = {
-                    use std::os::unix::fs::PermissionsExt;
-                    format!("{:o}", meta.permissions().mode() & 0o777)
-                };
-                #[cfg(not(unix))]
-                let permissions = if meta.permissions().readonly() {
-                    "readonly"
-                } else {
-                    "writable"
-                };
+        for path_str in &paths {
+            match fs::metadata(path_str).await {
+                Ok(meta) => {
+                    let file_type = if meta.is_dir() {
+                        "directory"
+                    } else if meta.is_file() {
+                        "file"
+                    } else if meta.is_symlink() {
+                        "symlink"
+                    } else {
+                        "other"
+                    };
 
-                let result = serde_json::json!({
-                    "path": req.path,
-                    "exists": true,
-                    "type": file_type,
-                    "size": meta.len(),
-                    "permissions": permissions,
-                    "readonly": meta.permissions().readonly()
-                });
-                Ok(CallToolResult::success(vec![Content::text(
-                    result.to_string(),
-                )]))
-            }
-            Err(e) => {
-                if e.kind() == std::io::ErrorKind::NotFound {
-                    let result = serde_json::json!({
-                        "path": req.path,
-                        "exists": false
-                    });
-                    Ok(CallToolResult::success(vec![Content::text(
-                        result.to_string(),
-                    )]))
-                } else {
-                    Ok(CallToolResult::error(vec![Content::text(format!(
-                        "Failed to stat: {}",
-                        e
-                    ))]))
+                    #[cfg(unix)]
+                    let permissions = {
+                        use std::os::unix::fs::PermissionsExt;
+                        format!("{:o}", meta.permissions().mode() & 0o777)
+                    };
+                    #[cfg(not(unix))]
+                    let permissions = if meta.permissions().readonly() {
+                        "readonly"
+                    } else {
+                        "writable"
+                    };
+
+                    results.push(serde_json::json!({
+                        "path": path_str,
+                        "exists": true,
+                        "type": file_type,
+                        "size": meta.len(),
+                        "permissions": permissions,
+                        "readonly": meta.permissions().readonly()
+                    }));
+                }
+                Err(e) => {
+                    if e.kind() == std::io::ErrorKind::NotFound {
+                        results.push(serde_json::json!({
+                            "path": path_str,
+                            "exists": false
+                        }));
+                    } else {
+                        results.push(serde_json::json!({
+                            "path": path_str,
+                            "error": e.to_string()
+                        }));
+                    }
                 }
             }
         }
+
+        let response = if paths.len() == 1 {
+            results.into_iter().next().unwrap()
+        } else {
+            serde_json::json!({ "results": results })
+        };
+
+        Ok(CallToolResult::success(vec![Content::text(
+            response.to_string(),
+        )]))
     }
 
-    #[tool(name = "Filesystem - Exists", description = "Check if a path exists.")]
+    #[tool(
+        name = "Filesystem - Exists",
+        description = "Check if path(s) exist. Returns boolean for single path, array for multiple."
+    )]
     async fn fs_exists(
         &self,
         Parameters(req): Parameters<FsExistsRequest>,
     ) -> Result<CallToolResult, ErrorData> {
-        let path = std::path::Path::new(&req.path);
-        let exists = path.exists();
+        let paths: Vec<&str> = req.path.split_whitespace().collect();
+        let mut results = Vec::new();
 
-        let result = serde_json::json!({
-            "path": req.path,
-            "exists": exists
-        });
+        for path_str in &paths {
+            let path = std::path::Path::new(path_str);
+            results.push(serde_json::json!({
+                "path": path_str,
+                "exists": path.exists()
+            }));
+        }
+
+        let response = if paths.len() == 1 {
+            results.into_iter().next().unwrap()
+        } else {
+            serde_json::json!({ "results": results })
+        };
+
         Ok(CallToolResult::success(vec![Content::text(
-            result.to_string(),
+            response.to_string(),
         )]))
     }
 
@@ -9529,6 +9857,192 @@ impl ModernCliTools {
 
         Ok(CallToolResult::success(vec![Content::text(output)]))
     }
+
+    // ========================================================================
+    // DYNAMIC TOOLSETS (BETA)
+    // ========================================================================
+
+    #[tool(
+        name = "list_available_toolsets",
+        description = "List all available toolsets with their enabled status. \
+        Use this to discover which toolsets can be enabled. \
+        Only available when dynamic toolsets mode is active."
+    )]
+    async fn list_available_toolsets(&self) -> Result<CallToolResult, ErrorData> {
+        if !self.dynamic_config.enabled {
+            return Ok(CallToolResult::success(vec![Content::text(
+                "Dynamic toolsets mode is not enabled. \
+                Start the server with --dynamic-toolsets flag to use this feature.\n\n\
+                Current mode: All tools are available. Use `list_tool_groups` or `expand_tools` instead.",
+            )]));
+        }
+
+        let enabled_groups = self.dynamic_config.enabled_groups.read();
+        let mut output = String::from("## Available Toolsets\n\n");
+        output.push_str("| Toolset | Tools | Status | Description |\n");
+        output.push_str("|---------|-------|--------|-------------|\n");
+
+        for group in ToolGroup::ALL {
+            let status = if enabled_groups.contains(group) {
+                "✓ Enabled"
+            } else {
+                "○ Disabled"
+            };
+            output.push_str(&format!(
+                "| {} | {} | {} | {} |\n",
+                group.id(),
+                group.tool_count(),
+                status,
+                group.description()
+            ));
+        }
+
+        let enabled_count = enabled_groups.len();
+        let total_tools: usize = enabled_groups.iter().map(|g| g.tool_count()).sum();
+        output.push_str(&format!(
+            "\n**Enabled:** {}/{} toolsets ({} tools)\n\n\
+            Use `enable_toolset` to activate a toolset.\n\
+            Use `get_toolset_tools` to preview tools before enabling.",
+            enabled_count,
+            ToolGroup::ALL.len(),
+            total_tools
+        ));
+
+        Ok(CallToolResult::success(vec![Content::text(output)]))
+    }
+
+    #[tool(
+        name = "get_toolset_tools",
+        description = "Get the list of tools in a specific toolset without enabling it. \
+        Use this to preview what tools will become available when you enable a toolset."
+    )]
+    async fn get_toolset_tools(
+        &self,
+        Parameters(req): Parameters<GetToolsetToolsRequest>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let group = req.toolset.parse::<ToolGroup>().map_err(|e| {
+            ErrorData::new(
+                rmcp::model::ErrorCode::INVALID_REQUEST,
+                e,
+                None::<serde_json::Value>,
+            )
+        })?;
+
+        let tools = group.tools();
+        let enabled = self.is_group_enabled(group);
+
+        let mut output = format!("## {} Toolset ({} tools)\n\n", group.name(), tools.len());
+
+        if self.dynamic_config.enabled {
+            output.push_str(&format!(
+                "**Status:** {}\n\n",
+                if enabled {
+                    "✓ Enabled"
+                } else {
+                    "○ Disabled"
+                }
+            ));
+        }
+
+        output.push_str(&format!("**Description:** {}\n\n", group.description()));
+        output.push_str("**Tools:**\n");
+
+        for (i, tool) in tools.iter().enumerate() {
+            output.push_str(&format!("{}. {}\n", i + 1, tool));
+        }
+
+        if self.dynamic_config.enabled && !enabled {
+            output.push_str(&format!(
+                "\n---\nUse `enable_toolset(\"{}\")` to activate these tools.",
+                group.id()
+            ));
+        }
+
+        Ok(CallToolResult::success(vec![Content::text(output)]))
+    }
+
+    #[tool(
+        name = "enable_toolset",
+        description = "Enable a toolset to make its tools available. \
+        Use 'all' to enable all toolsets at once. \
+        Only available when dynamic toolsets mode is active. \
+        After enabling, the tool list will be updated."
+    )]
+    async fn enable_toolset(
+        &self,
+        Parameters(req): Parameters<EnableToolsetRequest>,
+    ) -> Result<CallToolResult, ErrorData> {
+        if !self.dynamic_config.enabled {
+            return Ok(CallToolResult::success(vec![Content::text(
+                "Dynamic toolsets mode is not enabled. \
+                Start the server with --dynamic-toolsets flag to use this feature.\n\n\
+                Current mode: All tools are already available.",
+            )]));
+        }
+
+        // Handle 'all' special case
+        if req.toolset.to_lowercase() == "all" {
+            let mut enabled_groups = self.dynamic_config.enabled_groups.write();
+            let already_enabled = enabled_groups.len();
+            for group in ToolGroup::ALL {
+                enabled_groups.insert(*group);
+            }
+            let newly_enabled = ToolGroup::ALL.len() - already_enabled;
+            let total_tools: usize = ToolGroup::ALL.iter().map(|g| g.tool_count()).sum();
+
+            // Note: Notification would be sent here if we had access to the peer
+            // For now, we indicate that the client should refresh the tool list
+            return Ok(CallToolResult::success(vec![Content::text(format!(
+                "## All Toolsets Enabled\n\n\
+                Enabled {} new toolsets ({} were already enabled).\n\
+                **Total tools now available:** {}\n\n\
+                ⚠️ **Note:** The tool list has changed. \
+                The client should receive a `tools/list_changed` notification.",
+                newly_enabled, already_enabled, total_tools
+            ))]));
+        }
+
+        // Parse specific toolset
+        let group = req.toolset.parse::<ToolGroup>().map_err(|e| {
+            ErrorData::new(
+                rmcp::model::ErrorCode::INVALID_REQUEST,
+                e,
+                None::<serde_json::Value>,
+            )
+        })?;
+
+        // Check if already enabled
+        if self.is_group_enabled(group) {
+            return Ok(CallToolResult::success(vec![Content::text(format!(
+                "Toolset '{}' is already enabled.\n\n\
+                **Available tools:** {}",
+                group.id(),
+                group.tool_count()
+            ))]));
+        }
+
+        // Enable the group
+        self.enable_group(group);
+
+        let tools = group.tools();
+        let tool_list = tools
+            .iter()
+            .enumerate()
+            .map(|(i, t)| format!("{}. {}", i + 1, t))
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        // Note: Notification would be sent here if we had access to the peer
+        Ok(CallToolResult::success(vec![Content::text(format!(
+            "## Toolset '{}' Enabled\n\n\
+            **Tools now available ({}):**\n{}\n\n\
+            ⚠️ **Note:** The tool list has changed. \
+            The client should receive a `tools/list_changed` notification.",
+            group.id(),
+            tools.len(),
+            tool_list
+        ))]))
+    }
 }
 
 // Helper functions
@@ -9679,15 +10193,67 @@ async fn copy_dir_recursive(src: &std::path::Path, dst: &std::path::Path) -> std
     Ok(count)
 }
 
-#[tool_handler]
+// Manual ServerHandler implementation for dynamic tool filtering
 impl ServerHandler for ModernCliTools {
     fn get_info(&self) -> ServerInfo {
         let instructions = self.build_instructions();
+
+        // Enable listChanged capability when dynamic toolsets are active
+        let capabilities = if self.dynamic_config.enabled {
+            ServerCapabilities::builder()
+                .enable_tools()
+                .enable_tool_list_changed()
+                .build()
+        } else {
+            ServerCapabilities::builder().enable_tools().build()
+        };
+
         ServerInfo {
             instructions: Some(instructions),
-            capabilities: ServerCapabilities::builder().enable_tools().build(),
+            capabilities,
             ..Default::default()
         }
+    }
+
+    async fn list_tools(
+        &self,
+        _request: Option<PaginatedRequestParam>,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<ListToolsResult, ErrorData> {
+        // In non-dynamic mode, return all tools
+        if !self.dynamic_config.enabled {
+            return Ok(ListToolsResult::with_all_items(self.tool_router.list_all()));
+        }
+
+        // Dynamic mode: filter by enabled groups
+        let enabled_groups = self.dynamic_config.enabled_groups.read();
+
+        let filtered_tools: Vec<Tool> = self
+            .tool_router
+            .map
+            .values()
+            .filter(|route| {
+                let tool_name = route.attr.name.as_ref();
+                // Check if this tool belongs to an enabled group
+                // Meta-tools (not in any group) are always visible
+                self.tool_to_group
+                    .get(tool_name)
+                    .map(|group| enabled_groups.contains(group))
+                    .unwrap_or(true) // Meta-tools always visible
+            })
+            .map(|route| route.attr.clone())
+            .collect();
+
+        Ok(ListToolsResult::with_all_items(filtered_tools))
+    }
+
+    async fn call_tool(
+        &self,
+        request: CallToolRequestParam,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let tcc = ToolCallContext::new(self, request, context);
+        self.tool_router.call(tcc).await
     }
 }
 
@@ -9699,6 +10265,40 @@ impl ModernCliTools {
 
         let mut instructions = String::from(base);
 
+        // Dynamic toolsets mode (beta)
+        if self.dynamic_config.enabled {
+            instructions.push_str(
+                "\n\n## Dynamic Toolsets Mode (Beta)\n\
+                This server is running in dynamic toolsets mode. Tools are organized into \
+                toolsets that can be enabled on demand.\n\n\
+                **Available commands:**\n\
+                - `list_available_toolsets` - Show all toolsets and their status\n\
+                - `get_toolset_tools` - Preview tools in a toolset\n\
+                - `enable_toolset` - Enable a toolset to activate its tools\n\n",
+            );
+
+            let enabled_groups = self.dynamic_config.enabled_groups.read();
+            if enabled_groups.is_empty() {
+                instructions.push_str(
+                    "**No toolsets enabled yet.** Use `list_available_toolsets` to see \
+                    available toolsets and `enable_toolset` to activate them.",
+                );
+            } else {
+                instructions.push_str("**Currently enabled toolsets:**\n");
+                for group in ToolGroup::ALL {
+                    if enabled_groups.contains(group) {
+                        instructions.push_str(&format!(
+                            "- {} ({} tools)\n",
+                            group.id(),
+                            group.tool_count()
+                        ));
+                    }
+                }
+            }
+            return instructions;
+        }
+
+        // Profile mode
         if let Some(profile) = &self.profile {
             instructions.push_str(&format!(
                 "\n\n## Active Profile: {}\n{}",
@@ -9723,6 +10323,7 @@ impl ModernCliTools {
                 }
             }
         } else {
+            // Default mode - all tools available
             instructions.push_str(
                 "\n\n## Tool Organization\n\
                 Tools are organized into 15 groups. Use `list_tool_groups` to see all groups \

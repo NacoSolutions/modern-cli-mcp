@@ -56,7 +56,7 @@
         mcpServer = pkgs.rustPlatform.buildRustPackage {
           pname = "modern-cli-mcp";
           version = "0.1.0";
-          src = ./.;
+          src = self;
           cargoLock.lockFile = ./Cargo.lock;
 
           nativeBuildInputs = with pkgs; [ pkg-config ];
@@ -86,7 +86,7 @@
 
         # Git hooks
         pre-commit-check = git-hooks.lib.${system}.run {
-          src = ./.;
+          src = self;
           hooks = import ./githooks.nix { inherit pkgs; };
         };
       in

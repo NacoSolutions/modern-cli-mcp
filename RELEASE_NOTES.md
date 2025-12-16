@@ -1,3 +1,83 @@
+# Modern CLI MCP: v0.4.0 Release Notes - Dynamic Toolsets & Batch Operations
+
+## Overview
+
+Modern CLI MCP v0.4.0 introduces Dynamic Toolsets Mode for reduced cognitive load, consistent pretty names across all 104+ tools, and comprehensive batch operation support for multi-file workflows.
+
+## Changes in v0.4.0
+
+### 🚀 Dynamic Toolsets Mode (Beta)
+
+New CLI flags for on-demand tool activation:
+- **`--dynamic-toolsets`** - Start with only meta-tools, enable groups on demand
+- **`--toolsets`** - Pre-enable specific groups (e.g., `--toolsets=filesystem,git`)
+- **`MCP_DYNAMIC_TOOLSETS`** / **`MCP_TOOLSETS`** - Environment variable support
+
+Meta-tools for runtime management:
+- **`list_available_toolsets`** - Show all toolsets and their status
+- **`get_toolset_tools`** - Preview tools in a toolset before enabling
+- **`enable_toolset`** - Activate a toolset (use "all" for everything)
+
+### 🔧 Batch Operations
+
+Extended batch support for multi-file workflows:
+- **Filesystem - Trash/Copy/Move** - Space-separated paths with per-item results
+- **Filesystem - Mkdir** - Create multiple directories at once
+- **Filesystem - Stat/Exists** - Check multiple paths in one call
+- **File - Edit** - Apply same replacement across multiple files
+
+All batch operations return JSON with summary counts and per-item success/error status.
+
+### ✨ Pretty Names for All Tools
+
+Consistent "Category - Name (tool)" format across all 104+ tools:
+- `file_read` → "File - Read"
+- `ast_grep` → "Search - AST (ast-grep)"
+- `jq` → "Text - JSON (jq)"
+- `kubectl_get` → "Kubernetes - Get"
+- And 10 more tools standardized
+
+### 🐳 Container Improvements
+
+- **Container - Compose** - Supports both podman-compose and docker compose v2
+- **Container - Buildx** - Multi-platform builds
+- **Container - Build (buildah)** - OCI image builder
+
+### 📦 Additional Improvements
+
+- Git tools path parameter clarified: uses `git -C <path>` behavior
+- .agentignore support for tool-specific ignore patterns
+- Web search via DuckDuckGo (ddgr) with native JSON
+- 15 virtual tool groups with agent profiles
+
+## Installation
+
+```bash
+# Nix (recommended)
+nix run github:NacoSolutions/modern-cli-mcp
+
+# With dynamic toolsets
+nix run github:NacoSolutions/modern-cli-mcp -- --dynamic-toolsets
+
+# Docker
+docker pull ghcr.io/nacosolutions/modern-cli-mcp:0.4.0
+```
+
+## Configuration
+
+```json
+{
+  "mcpServers": {
+    "modern-cli": {
+      "command": "nix",
+      "args": ["run", "github:NacoSolutions/modern-cli-mcp", "--", "--dynamic-toolsets"]
+    }
+  }
+}
+```
+
+---
+
 # Modern CLI MCP: v0.2.0 Release Notes - Tool Expansion
 
 ## Overview
