@@ -1,4 +1,5 @@
 // modern-cli-mcp/src/main.rs
+mod cli;
 mod groups;
 mod ignore;
 mod state;
@@ -38,6 +39,10 @@ struct Args {
     /// List available tool groups and exit.
     #[arg(long)]
     list_groups: bool,
+
+    /// List tools available for direct execution (busybox-style).
+    #[arg(long)]
+    list_tools: bool,
 }
 
 fn print_profiles() {
@@ -78,6 +83,17 @@ fn print_groups() {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Check for direct tool execution before parsing clap args
+    // This allows `modern-cli-mcp eza -la` to work without clap interference
+    let raw_args: Vec<String> = std::env::args().collect();
+    if raw_args.len() > 1 {
+        let first_arg = &raw_args[1];
+        // Skip if it looks like a flag
+        if !first_arg.starts_with('-') && cli::is_known_tool(first_arg) {
+            cli::run_tool_directly(first_arg, &raw_args[2..]);
+        }
+    }
+
     let args = Args::parse();
 
     // Handle info commands
@@ -88,6 +104,11 @@ async fn main() -> Result<()> {
 
     if args.list_groups {
         print_groups();
+        return Ok(());
+    }
+
+    if args.list_tools {
+        cli::print_tools();
         return Ok(());
     }
 

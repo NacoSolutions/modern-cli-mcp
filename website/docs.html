@@ -52,11 +52,12 @@
       <div class="bg-gray-800 p-6 rounded-lg mb-6 border-l-4 border-cyan-400">
         <h3 class="text-xl font-semibold mb-3 text-cyan-400">AppImage (Recommended for non-Nix users)</h3>
         <p class="text-gray-400 text-sm mb-3">Single portable executable with all 104+ CLI tools bundled. No dependencies required.</p>
-        <pre class="bg-gray-900 p-4 rounded overflow-x-auto mb-3"><code># Install to /opt (recommended)
-curl -fsSL https://github.com/NacoSolutions/modern-cli-mcp/releases/latest/download/modern-cli-mcp-x86_64.AppImage \
-  -o /opt/modern-cli-mcp.AppImage
-chmod +x /opt/modern-cli-mcp.AppImage</code></pre>
-        <p class="text-gray-500 text-xs">Or download manually from <a href="https://github.com/NacoSolutions/modern-cli-mcp/releases" class="text-cyan-400 hover:underline">GitHub Releases</a></p>
+        <pre class="bg-gray-900 p-4 rounded overflow-x-auto mb-3"><code># Install to ~/.local/bin (user)
+curl -fsSL https://raw.githubusercontent.com/NacoSolutions/modern-cli-mcp/main/install.sh | sh
+
+# Install to /usr/local/bin (system-wide)
+curl -fsSL https://raw.githubusercontent.com/NacoSolutions/modern-cli-mcp/main/install.sh | sh -s -- --system</code></pre>
+        <p class="text-gray-500 text-xs mt-2">Options: <code>--full</code> (default, AppImage) | <code>--binary</code> (server only) | <code>--user</code> (default) | <code>--system</code></p>
       </div>
 
       <!-- Nix -->
@@ -114,11 +115,12 @@ nix run "https://flakehub.com/f/NacoSolutions/modern-cli-mcp/0.4.tar.gz"</code><
           <pre class="bg-gray-800 p-4 rounded overflow-x-auto"><code class="text-cyan-300">{
   "mcpServers": {
     "modern-cli": {
-      "command": "/opt/modern-cli-mcp.AppImage",
+      "command": "~/.local/bin/modern-cli-mcp",
       "args": []
     }
   }
 }</code></pre>
+          <p class="text-gray-500 text-xs mt-2">Use <code>/usr/local/bin/modern-cli-mcp</code> for system-wide installs</p>
         </div>
 
         <div id="config-nix" class="hidden">
