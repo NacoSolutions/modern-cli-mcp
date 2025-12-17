@@ -135,8 +135,8 @@ Agent Profiles (--profile flag):
 - implements [[MCP Tool Protocol]]
 - uses [[ElysiaJS]]
 - uses [[HTMX]]
-- publishes_to [[FlakeHub]]
-- publishes_to [[GitHub Container Registry]]
+- publishes_to [[MCP Registry]]
+- publishes_to [[GitHub Releases]]
 
 
 ## Dual-Response Pattern
@@ -184,4 +184,43 @@ Architecture for returning both human-readable summaries and raw structured data
 - Need nightly Rust features
 - Workspace grows to 100+ crates
 - CI cache limits become an issue
+
+## CI/CD Pipeline
+
+```
+Tag Push (v*)
+    │
+    ▼
+┌─────────────────────────────────────────────────────────┐
+│                  publish.yml workflow                    │
+├─────────────────────────────────────────────────────────┤
+│  create-release ──► softprops/action-gh-release         │
+│                                                          │
+│  build ──────────► nix build .#full                     │
+│                    └── artifacts: binary, SBOMs          │
+│                                                          │
+│  appimage ───────► nix bundle (nix-appimage)            │
+│                    └── artifact: .AppImage               │
+│                                                          │
+│  release-assets ─► gh release upload (--clobber)        │
+│                                                          │
+│  mcp-registry ───► mcp-publisher publish                │
+│                    └── registry.modelcontextprotocol.io  │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Caching**: Cachix (nacosolutions cache)
+- `cachix/install-nix-action@v30` + `cachix/cachix-action@v15`
+- skipPush on pull_request events
+
+**MCP Registry Requirements**:
+- `name`: Must match OIDC claim case (`io.github.NacoSolutions/...`)
+- `description`: ≤100 characters
+- `packages`: Empty array (no supported registryType for Nix)
+
+**Release Assets**:
+- `modern-cli-mcp-linux-x86_64` - static binary
+- `modern-cli-mcp-x86_64.AppImage` - portable bundle (~800MB with Nix deps)
+- `sbom-cargo.txt` - Cargo dependencies
+- `sbom-nix-closure.txt` - Nix closure paths
 
