@@ -10,6 +10,27 @@ tags:
 
 # Changelog: modern-cli-mcp
 
+## [0.6.0] - 2025-12-17
+
+### Added
+- Dual-response mode complete for all 104+ tools
+  - `--dual-response` flag / `MCP_DUAL_RESPONSE=1` env var
+  - Normal mode: Returns raw JSON/text data (single content block)
+  - Dual mode: Returns summary text + embedded resource with raw data
+- Helper methods: `build_response()`, `build_cmd_response()`, `build_error()`
+- Summary formatters in `src/format.rs`
+
+### Changed
+- All tools now use `build_response()` pattern for consistent output
+- Tool responses include human-readable summaries in dual mode
+
+## [0.5.0] - 2025-12-16
+
+### Added
+- Busybox-style CLI execution (`modern-cli-mcp eza -la`)
+- install.sh script with --user/--system and --full/--binary options
+- Dual-response mode foundation (`--dual-response` flag)
+
 ## [0.4.0] - 2025-12-16
 
 ### Added

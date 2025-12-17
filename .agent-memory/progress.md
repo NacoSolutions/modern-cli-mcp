@@ -56,8 +56,8 @@ tags:
 - [architecture] Virtual tools: src/groups.rs with ToolGroup and AgentProfile enums
 - [research] GitHub Copilot found 2-5% benchmark improvement with reduced toolsets
 ## Current Status
-**Version**: 0.5.0 (released)
-**Phase**: Active Development - Dual Response Mode
+**Version**: 0.6.0 (released)
+**Phase**: Active Development - Feature Complete
 
 ### What Works
 - 104+ CLI tools exposed via MCP protocol
@@ -77,16 +77,15 @@ None - dual-response mode complete.
 
 
 ## Recent Session
-- Released v0.4.0: Dynamic Toolsets & Batch Operations
-- Deployed to FlakeHub, GitHub Releases, Docker (ghcr.io/nacosolutions/modern-cli-mcp:0.4.0)
-- MCP registry job failed (non-blocking, just registry listing)
-- All functional deployments successful
+- Released v0.6.0: Dual-response mode complete
+- All 104+ tools refactored to use build_response() pattern
+- Tested dual-response mode - summary + embedded resource working
+- Deployed to GitHub Releases
 
 ## Previous Session
-- Implemented Dynamic Toolsets Mode (beta feature)
-- New CLI flags: `--dynamic-toolsets`, `--toolsets`
-- Environment variables: `MCP_DYNAMIC_TOOLSETS`, `MCP_TOOLSETS`
-- New tools: `list_available_toolsets`, `get_toolset_tools`, `enable_toolset`
+- Released v0.5.0: Busybox-style CLI execution
+- Released v0.4.0: Dynamic Toolsets & Batch Operations
+- Deployed to FlakeHub, GitHub Releases, Docker
 
 ## Relations
 
