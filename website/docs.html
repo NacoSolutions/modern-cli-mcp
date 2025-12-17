@@ -102,16 +102,19 @@ nix run "https://flakehub.com/f/NacoSolutions/modern-cli-mcp/0.4.tar.gz"</code><
     <section id="configuration" class="mb-12">
       <h2 class="text-2xl font-semibold mb-6 text-cyan-400">Configuration</h2>
 
-      <p class="text-gray-400 mb-4">Add to your MCP client's config file:</p>
+      <p class="text-gray-400 mb-4">Add to your MCP client's config file based on your installation method:</p>
 
-      <!-- Tabs for AppImage vs Nix -->
+      <!-- Tabs for different install methods -->
       <div class="mb-6">
-        <div class="flex gap-2 mb-4">
-          <button class="px-4 py-2 bg-cyan-600 rounded font-semibold text-sm" onclick="document.getElementById('config-appimage').classList.remove('hidden'); document.getElementById('config-nix').classList.add('hidden'); this.classList.add('bg-cyan-600'); this.nextElementSibling.classList.remove('bg-cyan-600'); this.nextElementSibling.classList.add('bg-gray-700');">AppImage</button>
-          <button class="px-4 py-2 bg-gray-700 rounded font-semibold text-sm" onclick="document.getElementById('config-nix').classList.remove('hidden'); document.getElementById('config-appimage').classList.add('hidden'); this.classList.add('bg-cyan-600'); this.previousElementSibling.classList.remove('bg-cyan-600'); this.previousElementSibling.classList.add('bg-gray-700');">Nix</button>
+        <div class="flex flex-wrap gap-2 mb-4" id="config-tabs">
+          <button class="config-tab px-4 py-2 bg-cyan-600 rounded font-semibold text-sm" data-target="config-appimage">AppImage</button>
+          <button class="config-tab px-4 py-2 bg-gray-700 rounded font-semibold text-sm" data-target="config-nix-run">Nix Run</button>
+          <button class="config-tab px-4 py-2 bg-gray-700 rounded font-semibold text-sm" data-target="config-nix-profile">Nix Profile</button>
+          <button class="config-tab px-4 py-2 bg-gray-700 rounded font-semibold text-sm" data-target="config-binary">Binary</button>
         </div>
 
-        <div id="config-appimage">
+        <div id="config-appimage" class="config-content">
+          <p class="text-gray-400 text-sm mb-3">For <code>install.sh</code> or AppImage download:</p>
           <pre class="bg-gray-800 p-4 rounded overflow-x-auto"><code class="text-cyan-300">{
   "mcpServers": {
     "modern-cli": {
@@ -120,10 +123,11 @@ nix run "https://flakehub.com/f/NacoSolutions/modern-cli-mcp/0.4.tar.gz"</code><
     }
   }
 }</code></pre>
-          <p class="text-gray-500 text-xs mt-2">Use <code>/usr/local/bin/modern-cli-mcp</code> for system-wide installs</p>
+          <p class="text-gray-500 text-xs mt-2">Use <code>/usr/local/bin/modern-cli-mcp</code> for <code>--system</code> installs</p>
         </div>
 
-        <div id="config-nix" class="hidden">
+        <div id="config-nix-run" class="config-content hidden">
+          <p class="text-gray-400 text-sm mb-3">For <code>nix run</code> (fetches latest on each run):</p>
           <pre class="bg-gray-800 p-4 rounded overflow-x-auto"><code class="text-cyan-300">{
   "mcpServers": {
     "modern-cli": {
@@ -132,8 +136,51 @@ nix run "https://flakehub.com/f/NacoSolutions/modern-cli-mcp/0.4.tar.gz"</code><
     }
   }
 }</code></pre>
+          <p class="text-gray-500 text-xs mt-2">Pin version: <code>"args": ["run", "github:NacoSolutions/modern-cli-mcp/v0.6.7", "--"]</code></p>
+        </div>
+
+        <div id="config-nix-profile" class="config-content hidden">
+          <p class="text-gray-400 text-sm mb-3">For <code>nix profile install</code>:</p>
+          <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-3"><code class="text-gray-400"># First install to profile
+nix profile install github:NacoSolutions/modern-cli-mcp</code></pre>
+          <pre class="bg-gray-800 p-4 rounded overflow-x-auto"><code class="text-cyan-300">{
+  "mcpServers": {
+    "modern-cli": {
+      "command": "modern-cli-mcp",
+      "args": []
+    }
+  }
+}</code></pre>
+          <p class="text-gray-500 text-xs mt-2">Binary is in PATH at <code>~/.nix-profile/bin/modern-cli-mcp</code></p>
+        </div>
+
+        <div id="config-binary" class="config-content hidden">
+          <p class="text-gray-400 text-sm mb-3">For manual binary download from <a href="https://github.com/NacoSolutions/modern-cli-mcp/releases" class="text-cyan-400 hover:underline">GitHub Releases</a>:</p>
+          <pre class="bg-gray-800 p-4 rounded overflow-x-auto"><code class="text-cyan-300">{
+  "mcpServers": {
+    "modern-cli": {
+      "command": "/path/to/modern-cli-mcp",
+      "args": []
+    }
+  }
+}</code></pre>
+          <p class="text-gray-500 text-xs mt-2">
+            <span class="text-yellow-400">Note:</span> Binary-only requires CLI tools in PATH.
+            Use AppImage for bundled tools.
+          </p>
         </div>
       </div>
+
+      <script>
+        document.querySelectorAll('.config-tab').forEach(tab => {
+          tab.addEventListener('click', () => {
+            document.querySelectorAll('.config-tab').forEach(t => t.classList.replace('bg-cyan-600', 'bg-gray-700'));
+            document.querySelectorAll('.config-content').forEach(c => c.classList.add('hidden'));
+            tab.classList.replace('bg-gray-700', 'bg-cyan-600');
+            document.getElementById(tab.dataset.target).classList.remove('hidden');
+          });
+        });
+      </script>
 
       <h3 class="text-xl font-semibold mb-2">Config File Locations</h3>
       <ul class="list-disc list-inside text-gray-400 space-y-1 mb-4">
@@ -154,16 +201,31 @@ nix run "https://flakehub.com/f/NacoSolutions/modern-cli-mcp/0.4.tar.gz"</code><
 
       <h3 class="text-xl font-semibold mb-2">Usage</h3>
       <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-6"><code># Run with a specific profile
-nix run github:NacoSolutions/modern-cli-mcp -- --profile explore
+modern-cli-mcp --profile explore
 
 # List available profiles
-nix run github:NacoSolutions/modern-cli-mcp -- --list-profiles
+modern-cli-mcp --list-profiles
 
 # List tool groups
-nix run github:NacoSolutions/modern-cli-mcp -- --list-groups</code></pre>
+modern-cli-mcp --list-groups</code></pre>
 
       <h3 class="text-xl font-semibold mb-2">MCP Configuration with Profile</h3>
-      <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-6"><code class="text-cyan-300">{
+      <div class="flex gap-2 mb-3">
+        <button class="profile-tab px-3 py-1 bg-cyan-600 rounded text-sm" data-target="profile-appimage">AppImage</button>
+        <button class="profile-tab px-3 py-1 bg-gray-700 rounded text-sm" data-target="profile-nix">Nix</button>
+      </div>
+      <div id="profile-appimage" class="profile-content">
+        <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-6"><code class="text-cyan-300">{
+  "mcpServers": {
+    "modern-cli": {
+      "command": "~/.local/bin/modern-cli-mcp",
+      "args": ["--profile", "explore"]
+    }
+  }
+}</code></pre>
+      </div>
+      <div id="profile-nix" class="profile-content hidden">
+        <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-6"><code class="text-cyan-300">{
   "mcpServers": {
     "modern-cli": {
       "command": "nix",
@@ -171,6 +233,17 @@ nix run github:NacoSolutions/modern-cli-mcp -- --list-groups</code></pre>
     }
   }
 }</code></pre>
+      </div>
+      <script>
+        document.querySelectorAll('.profile-tab').forEach(tab => {
+          tab.addEventListener('click', () => {
+            document.querySelectorAll('.profile-tab').forEach(t => t.classList.replace('bg-cyan-600', 'bg-gray-700'));
+            document.querySelectorAll('.profile-content').forEach(c => c.classList.add('hidden'));
+            tab.classList.replace('bg-gray-700', 'bg-cyan-600');
+            document.getElementById(tab.dataset.target).classList.remove('hidden');
+          });
+        });
+      </script>
 
       <h3 class="text-xl font-semibold mb-3">Available Profiles</h3>
       <div class="space-y-3">
@@ -248,7 +321,23 @@ nix run github:NacoSolutions/modern-cli-mcp -- --list-groups</code></pre>
       </p>
 
       <h3 class="text-xl font-semibold mb-2">Enable Dynamic Mode</h3>
-      <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-6"><code class="text-cyan-300">{
+      <div class="flex gap-2 mb-3">
+        <button class="dynamic-tab px-3 py-1 bg-cyan-600 rounded text-sm" data-target="dynamic-appimage">AppImage</button>
+        <button class="dynamic-tab px-3 py-1 bg-gray-700 rounded text-sm" data-target="dynamic-nix">Nix</button>
+      </div>
+      <div id="dynamic-appimage" class="dynamic-content">
+        <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-4"><code class="text-cyan-300">{
+  "mcpServers": {
+    "modern-cli": {
+      "command": "~/.local/bin/modern-cli-mcp",
+      "args": ["--dynamic-toolsets"]
+    }
+  }
+}</code></pre>
+        <p class="text-gray-400 text-sm mb-6">Pre-enable toolsets: <code class="bg-gray-800 px-2 py-1 rounded">"args": ["--dynamic-toolsets", "--toolsets=filesystem,git"]</code></p>
+      </div>
+      <div id="dynamic-nix" class="dynamic-content hidden">
+        <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-4"><code class="text-cyan-300">{
   "mcpServers": {
     "modern-cli": {
       "command": "nix",
@@ -256,16 +345,18 @@ nix run github:NacoSolutions/modern-cli-mcp -- --list-groups</code></pre>
     }
   }
 }</code></pre>
-
-      <h3 class="text-xl font-semibold mb-2">Pre-enable Specific Toolsets</h3>
-      <pre class="bg-gray-800 p-4 rounded overflow-x-auto mb-6"><code class="text-cyan-300">{
-  "mcpServers": {
-    "modern-cli": {
-      "command": "nix",
-      "args": ["run", "github:NacoSolutions/modern-cli-mcp", "--", "--dynamic-toolsets", "--toolsets=filesystem,git"]
-    }
-  }
-}</code></pre>
+        <p class="text-gray-400 text-sm mb-6">Pre-enable toolsets: <code class="bg-gray-800 px-2 py-1 rounded">"args": ["run", "github:NacoSolutions/modern-cli-mcp", "--", "--dynamic-toolsets", "--toolsets=filesystem,git"]</code></p>
+      </div>
+      <script>
+        document.querySelectorAll('.dynamic-tab').forEach(tab => {
+          tab.addEventListener('click', () => {
+            document.querySelectorAll('.dynamic-tab').forEach(t => t.classList.replace('bg-cyan-600', 'bg-gray-700'));
+            document.querySelectorAll('.dynamic-content').forEach(c => c.classList.add('hidden'));
+            tab.classList.replace('bg-gray-700', 'bg-cyan-600');
+            document.getElementById(tab.dataset.target).classList.remove('hidden');
+          });
+        });
+      </script>
 
       <h3 class="text-xl font-semibold mb-2">Meta-tools</h3>
       <p class="text-gray-400 mb-3">In dynamic mode, these tools are always available:</p>
