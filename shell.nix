@@ -13,7 +13,7 @@ let
     inherit (inputs.pog.packages.${system}) pog;
   };
 
-  inherit (import ./pkgs.nix { inherit pkgs; }) cliTools rustTools webTools;
+  inherit (import ./pkgs.nix { inherit pkgs; }) cliTools rustTools webTools devTools;
 
   rustToolchain = pkgs.rust-bin.stable.latest.default;
 in
@@ -37,7 +37,7 @@ in
       Run 'menu' for complete command list.
     '';
 
-    packages = rustTools ++ webTools ++ cliTools;
+    packages = rustTools ++ webTools ++ cliTools ++ devTools;
 
     commands = [
       # Build & Run
@@ -178,6 +178,20 @@ in
         category = "website";
         help = "Format website code";
         command = "cd website && bun run format";
+      }
+
+      # Publishing
+      {
+        name = "mcp-publish";
+        category = "release";
+        help = "Publish to MCP registry (requires OIDC auth)";
+        command = "mcp-publisher publish";
+      }
+      {
+        name = "mcp-validate";
+        category = "release";
+        help = "Validate server.json against MCP schema";
+        command = "mcp-publisher validate";
       }
     ];
 

@@ -1,5 +1,32 @@
 # pkgs.nix
 { pkgs }:
+let
+  # MCP Publisher - tool for publishing to MCP registry
+  mcp-publisher = pkgs.stdenv.mkDerivation rec {
+    pname = "mcp-publisher";
+    version = "latest";
+
+    src = pkgs.fetchurl {
+      url = "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz";
+      sha256 = "sha256-xLQCtDqFFmw/hAZByhyebeW/oc9TPCJXbWY8y9oHEbs=";
+    };
+
+    sourceRoot = ".";
+
+    installPhase = ''
+      mkdir -p $out/bin
+      cp mcp-publisher $out/bin/
+      chmod +x $out/bin/mcp-publisher
+    '';
+
+    meta = with pkgs.lib; {
+      description = "CLI tool for publishing MCP servers to the registry";
+      homepage = "https://github.com/modelcontextprotocol/registry";
+      license = licenses.mit;
+      platforms = [ "x86_64-linux" ];
+    };
+  };
+in
 {
   rustTools = with pkgs; [
     # Rust toolchain
@@ -110,4 +137,12 @@
     # Task queue
     pueue
   ];
+
+  # Development/publishing tools
+  devTools = [
+    mcp-publisher
+  ];
+
+  # Export mcp-publisher for CI
+  inherit mcp-publisher;
 }

@@ -2,8 +2,8 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.nacosolutions/modern-cli-mcp",
   "title": "Modern CLI MCP Server",
-  "description": "MCP server exposing 107 modern CLI tools to AI/LLM agents. Provides structured JSON-RPC access to filesystem, Git forges, containers, Kubernetes, and data transformation tools—all optimized for AI consumption with JSON output.",
-  "version": "0.3.1",
+  "description": "MCP server exposing 104+ modern CLI tools to AI/LLM agents. Provides structured JSON-RPC access to filesystem, Git forges, containers, Kubernetes, and data transformation tools—all optimized for AI consumption with JSON output.",
+  "version": "0.6.3",
   "websiteUrl": "https://nacosolutions.github.io/modern-cli-mcp/",
   "repository": {
     "url": "https://github.com/NacoSolutions/modern-cli-mcp",
@@ -11,15 +11,11 @@
   },
   "packages": [
     {
-      "registryType": "oci",
-      "identifier": "ghcr.io/nacosolutions/modern-cli-mcp",
-      "version": "0.3.1",
+      "registryType": "nix",
+      "identifier": "github:NacoSolutions/modern-cli-mcp",
+      "version": "0.6.3",
       "transport": {
         "type": "stdio"
-      },
-      "runtimeArguments": {
-        "positional": ["run", "--rm", "-i"],
-        "named": []
       }
     }
   ],
@@ -30,7 +26,7 @@
           "type": "nix-flake",
           "command": "nix run github:NacoSolutions/modern-cli-mcp",
           "description": "Run directly via Nix flakes (recommended)",
-          "requirements": "Nix with flakes enabled or Determinate Nix"
+          "requirements": "Nix with flakes enabled"
         },
         {
           "type": "nix-profile",
@@ -39,10 +35,9 @@
           "requirements": "Nix with flakes enabled"
         },
         {
-          "type": "docker",
-          "command": "docker run --rm -i ghcr.io/nacosolutions/modern-cli-mcp",
-          "description": "Run via Docker container",
-          "requirements": "Docker or Podman"
+          "type": "appimage",
+          "description": "Download portable AppImage from GitHub releases",
+          "url": "https://github.com/NacoSolutions/modern-cli-mcp/releases"
         },
         {
           "type": "binary",
@@ -51,7 +46,7 @@
         }
       ],
       "features": [
-        "107 CLI tools across 15 categories",
+        "104+ CLI tools across 15 categories",
         "Zero-config installation via Nix",
         "AI-optimized JSON output by default",
         ".agentignore access control",
