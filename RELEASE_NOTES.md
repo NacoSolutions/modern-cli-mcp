@@ -1,3 +1,30 @@
+# Modern CLI MCP: v0.6.8 Release Notes - CI/CD Cleanup & Documentation
+
+## Overview
+
+Modern CLI MCP v0.6.8 removes blocked MCP registry publishing and improves documentation for all installation methods.
+
+## Changes in v0.6.8
+
+### 📚 Documentation Improvements
+
+- **Configuration docs for all install methods** - AppImage, Nix Run, Nix Profile, Binary
+- **Tabbed UI** for switching between config examples
+- **Updated Profiles & Dynamic Toolsets sections** with multi-method examples
+
+### 🔧 CI/CD Changes
+
+- **Removed MCP registry publishing** - Registry requires npm/pypi/oci packages or HTTP remotes; Nix stdio servers not supported
+- **Retained server.json** for future use when registry adds Nix support
+- **Fixed GitHub Pages workflow** - Configured for Actions deployment
+
+### 📝 Housekeeping
+
+- Updated RELEASE_WORKFLOW.md to remove Docker references
+- Simplified devshell (removed mcp-publisher)
+
+---
+
 # Modern CLI MCP: v0.4.0 Release Notes - Dynamic Toolsets & Batch Operations
 
 ## Overview
