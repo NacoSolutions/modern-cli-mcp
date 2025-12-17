@@ -203,9 +203,6 @@ Tag Push (v*)
 │                    └── artifact: .AppImage               │
 │                                                          │
 │  release-assets ─► gh release upload (--clobber)        │
-│                                                          │
-│  mcp-registry ───► mcp-publisher publish                │
-│                    └── registry.modelcontextprotocol.io  │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -213,10 +210,10 @@ Tag Push (v*)
 - `cachix/install-nix-action@v30` + `cachix/cachix-action@v15`
 - skipPush on pull_request events
 
-**MCP Registry Requirements**:
-- `name`: Must match OIDC claim case (`io.github.NacoSolutions/...`)
-- `description`: ≤100 characters
-- `packages`: Empty array (no supported registryType for Nix)
+**MCP Registry**: BLOCKED - requires packages (npm/pypi/oci) or remotes
+- Nix not a supported registryType
+- stdio servers without remote endpoints not indexed
+- See backlog/MCP Registry Publishing Blocked in basic-memory
 
 **Release Assets**:
 - `modern-cli-mcp-linux-x86_64` - static binary

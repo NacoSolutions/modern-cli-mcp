@@ -13,7 +13,7 @@ let
     inherit (inputs.pog.packages.${system}) pog;
   };
 
-  inherit (import ./pkgs.nix { inherit pkgs; }) cliTools rustTools webTools devTools;
+  inherit (import ./pkgs.nix { inherit pkgs; }) cliTools rustTools webTools;
 
   rustToolchain = pkgs.rust-bin.stable.latest.default;
 in
@@ -37,7 +37,7 @@ in
       Run 'menu' for complete command list.
     '';
 
-    packages = rustTools ++ webTools ++ cliTools ++ devTools;
+    packages = rustTools ++ webTools ++ cliTools;
 
     commands = [
       # Build & Run
@@ -156,43 +156,12 @@ in
 
       # Website
       {
-        name = "web-dev";
+        name = "web-serve";
         category = "website";
-        help = "Start website dev server";
-        command = "cd website && bun install && bun run dev";
-      }
-      {
-        name = "web-build";
-        category = "website";
-        help = "Build website for production";
-        command = "cd website && bun install && bun run build";
-      }
-      {
-        name = "web-lint";
-        category = "website";
-        help = "Lint website code";
-        command = "cd website && bun run lint";
-      }
-      {
-        name = "web-format";
-        category = "website";
-        help = "Format website code";
-        command = "cd website && bun run format";
+        help = "Serve website locally";
+        command = "python -m http.server 8000 -d website";
       }
 
-      # Publishing
-      {
-        name = "mcp-publish";
-        category = "release";
-        help = "Publish to MCP registry (requires OIDC auth)";
-        command = "mcp-publisher publish";
-      }
-      {
-        name = "mcp-validate";
-        category = "release";
-        help = "Validate server.json against MCP schema";
-        command = "mcp-publisher validate";
-      }
     ];
 
     env = [

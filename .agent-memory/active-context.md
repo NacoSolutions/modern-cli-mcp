@@ -16,14 +16,13 @@ tags:
 # Active Context: modern-cli-mcp
 
 ## Current Focus
-v0.6.7 released with complete CI/CD pipeline:
-- Single publish.yml workflow handles: tag → release → build → AppImage → upload → MCP registry
-- mcp-publisher available in devshell for local testing
-- Published to MCP registry at registry.modelcontextprotocol.io
+v0.6.8 - Removed MCP registry publishing (blocked, servers not indexed without packages/remotes)
+- Single publish.yml workflow handles: tag → release → build → AppImage → upload
+- MCP registry publishing removed (see backlog/MCP Registry Publishing Blocked in basic-memory)
 
 ## Recent Events (Last 10)
-1. [2025-12-17] Released v0.6.7 - Unified publish workflow + MCP registry publishing
-2. [2025-12-17] Added mcp-publisher v1.4.0 to devshell (custom Nix derivation)
+1. [2025-12-17] Removed MCP registry publishing - servers not indexed without packages/remotes
+2. [2025-12-17] Released v0.6.7 - Unified publish workflow + MCP registry publishing (blocked)
 3. [2025-12-17] Merged release.yml into publish.yml (single workflow on tag push)
 4. [2025-12-17] Fixed MCP registry: name case, description ≤100 chars, empty packages
 5. [2025-12-17] Migrated from FlakeHub to GitHub URLs, Determinate Nix to Cachix
@@ -39,9 +38,9 @@ v0.6.7 released with complete CI/CD pipeline:
 - [decision] AppImage as portable distribution (replaces Docker for single-binary use)
 - [decision] .agentignore respected instead of .gitignore (different use cases)
 - [decision] Memory bank uses kebab-case and .agent-memory/ to align with global conventions
+- [blocked] MCP registry requires packages (npm/pypi/oci) or remotes - Nix not supported
 - [pattern] CI: cachix/install-nix-action + cachix/cachix-action
-- [pattern] Publish workflow: tag push → create-release → build/appimage → release-assets → mcp-registry
-- [pattern] mcp-publisher requires: name case match OIDC, description ≤100 chars
+- [pattern] Publish workflow: tag push → create-release → build/appimage → release-assets
 - [architecture] Global memory: ~/.agent-memory/, Project memory: ./.agent-memory/
 - [important] Wrapped binary required for CLI tools - `nix build .#default` includes all tools in PATH
 

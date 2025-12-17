@@ -6,9 +6,8 @@ This guide explains the release process for Modern CLI MCP.
 
 ## CI/CD Features
 
-1. **Documentation-only changes skip tests**: Changes to *.md, .agent-memory/, .claude/, website/ don't trigger builds
-2. **Automatic Docker builds**: Main branch pushes build edge Docker images
-3. **Release publishing**: Tags trigger binary builds and versioned Docker images
+1. **Documentation-only changes skip tests**: Changes to *.md, .agent-memory/, .claude/, docs/, website/ don't trigger builds
+2. **Release publishing**: Tags trigger binary and AppImage builds
 
 ## Release Process
 
@@ -80,18 +79,15 @@ gh run list --workflow=publish.yml --limit 3
 
 # Verify Nix
 nix run github:NacoSolutions/modern-cli-mcp@vX.Y.Z
-
-# Verify Docker
-docker pull ghcr.io/NacoSolutions/modern-cli-mcp:X.Y.Z
 ```
 
 ## Artifacts Generated
 
 Each release produces:
 - `modern-cli-mcp-linux-x86_64` - Static binary
+- `modern-cli-mcp-x86_64.AppImage` - Portable bundle with dependencies
 - `sbom-cargo.txt` - Cargo dependency tree
 - `sbom-nix-closure.txt` - Full Nix closure
-- Docker image pushed to GHCR
 
 ## Troubleshooting
 
@@ -102,5 +98,3 @@ Each release produces:
 git tag -d vX.Y.Z
 git push origin :refs/tags/vX.Y.Z
 ```
-
-**Docker image missing**: Multi-arch builds take 5-10 minutes

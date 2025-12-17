@@ -56,7 +56,7 @@ tags:
 - [architecture] Virtual tools: src/groups.rs with ToolGroup and AgentProfile enums
 - [research] GitHub Copilot found 2-5% benchmark improvement with reduced toolsets
 ## Current Status
-**Version**: 0.6.7 (released)
+**Version**: 0.6.8 (pending)
 **Phase**: Active Development - Feature Complete
 
 ### What Works
@@ -67,20 +67,26 @@ tags:
 - Busybox-style CLI execution (`modern-cli-mcp eza -la`)
 - install.sh script with --user/--system and --full/--binary options
 - Dual-response mode (`--dual-response` flag) - COMPLETE
-- CI/CD: Unified publish workflow, Cachix caching, AppImage builds, MCP registry publishing
-- mcp-publisher v1.4.0 in devshell for local publishing
+- CI/CD: Unified publish workflow, Cachix caching, AppImage builds
+
+### Blocked
+- MCP registry publishing - requires packages (npm/pypi/oci) or remotes, Nix not supported
 
 ### In Progress
 None - feature complete.
 
 
 ## Recent Session
+- Removed MCP registry publishing from CI/CD (blocked - Nix not supported)
+- MCP registry requires packages (npm/pypi/oci) or remotes - stdio servers excluded
+- Removed mcp-publisher from devshell and pkgs.nix
+- Created backlog note in basic-memory for future re-enablement
+- server.json retained for future use
+
+## Previous Session
 - Released v0.6.7: Unified Publish Workflow + MCP Registry
 - Merged release.yml into publish.yml (single workflow)
-- Publish workflow triggers on tag push, creates release, builds artifacts, uploads to MCP registry
 - Added mcp-publisher v1.4.0 to devshell (pkgs.nix derivation)
-- Updated server.json: v0.6.7, NacoSolutions case, short description, empty packages
-- Fixed MCP registry publishing (name case, description length, registryType)
 - Cleaned up old releases (v0.6.1-v0.6.6), workflow runs, and caches
 
 ## Previous Session
