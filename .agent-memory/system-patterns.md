@@ -168,3 +168,20 @@ Architecture for returning both human-readable summaries and raw structured data
 - JSON: `application/json`
 - JSONL: `application/x-ndjson`
 
+## Future Consideration: Nix Rust Tooling
+
+**Evaluated**: nix-community/fenix + nix-community/crate2nix
+- fenix: Pure Rust toolchains, rust-analyzer nightly, granular components
+- crate2nix: Per-crate Nix derivations, granular caching
+
+**Decision**: Stay with oxalica/rust-overlay + rustPlatform.buildRustPackage
+- Current build times acceptable (~48 crates)
+- Simpler maintenance (no generated Cargo.nix)
+- crate2nix overhead not justified for project size
+
+**Revisit if**:
+- Build times become problematic
+- Need nightly Rust features
+- Workspace grows to 100+ crates
+- CI cache limits become an issue
+
