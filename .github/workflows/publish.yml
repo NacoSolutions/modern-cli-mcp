@@ -32,7 +32,8 @@ jobs:
       - name: Setup Cachix
         uses: cachix/cachix-action@v15
         with:
-          name: naco
+          name: nacosolutions
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
       - name: Build release
         run: |
@@ -82,7 +83,8 @@ jobs:
       - name: Setup Cachix
         uses: cachix/cachix-action@v15
         with:
-          name: naco
+          name: nacosolutions
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
       - name: Build AppImage
         run: |
