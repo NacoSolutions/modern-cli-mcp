@@ -8,10 +8,10 @@ tags:
 - focus
 ---
 
+- [2025-12-17] Evaluated fenix+crate2nix, documented as future consideration in system-patterns
 - [2025-12-17] Completed dual-response refactoring for all 104+ tools
 - [2025-12-16] Added dual-response mode (--dual-response flag) - returns formatted summary + raw data
 - [2025-12-16] Released v0.5.0 with busybox-style CLI execution and install.sh script
-- [2025-12-16] Created src/format.rs with summary formatters for tool output
 
 # Active Context: modern-cli-mcp
 
@@ -21,16 +21,16 @@ Completed dual-response mode for all 104+ tools. Every tool now uses `build_resp
 - Dual-response mode (`--dual-response`): Returns summary text + embedded resource with raw data
 
 ## Recent Events (Last 10)
-1. [2025-12-17] Released v0.6.0 - Dual-response mode complete for all 104+ tools
-2. [2025-12-17] Completed dual-response refactoring for all 104+ tools
-3. [2025-12-16] Released v0.5.0 with busybox-style CLI execution and install.sh
-4. [2025-12-16] Released v0.4.0 - Dynamic Toolsets, pretty names, batch operations
-5. [2025-12-16] Added pretty names to all tools (14 tools updated)
-6. [2025-12-16] Extended batch support to mkdir, stat, exists, file_edit tools
-7. [2025-12-16] Implemented Dynamic Toolsets Mode (beta) - `--dynamic-toolsets` flag
-8. [2025-12-16] Added `--toolsets` CLI flag and `MCP_TOOLSETS` env var
-9. [2025-12-15] Updated Container - Compose tool for podman-compose and docker compose v2
-10. [2025-12-15] Added container tools: compose, buildx, buildah
+1. [2025-12-17] Evaluated fenix+crate2nix for Nix Rust tooling - documented as future consideration
+2. [2025-12-17] Released v0.6.0 - Dual-response mode complete for all 104+ tools
+3. [2025-12-17] Completed dual-response refactoring for all 104+ tools
+4. [2025-12-16] Released v0.5.0 with busybox-style CLI execution and install.sh
+5. [2025-12-16] Released v0.4.0 - Dynamic Toolsets, pretty names, batch operations
+6. [2025-12-16] Added pretty names to all tools (14 tools updated)
+7. [2025-12-16] Extended batch support to mkdir, stat, exists, file_edit tools
+8. [2025-12-16] Implemented Dynamic Toolsets Mode (beta) - `--dynamic-toolsets` flag
+9. [2025-12-16] Added `--toolsets` CLI flag and `MCP_TOOLSETS` env var
+10. [2025-12-15] Updated Container - Compose tool for podman-compose and docker compose v2
 
 ## Observations
 - [decision] Determinate Nix provides faster, more reliable CI builds
