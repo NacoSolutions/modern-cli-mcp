@@ -2,8 +2,8 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.nacosolutions/modern-cli-mcp",
   "title": "Modern CLI MCP Server",
-  "description": "MCP server exposing 104+ modern CLI tools to AI/LLM agents. Provides structured JSON-RPC access to filesystem, Git forges, containers, Kubernetes, and data transformation tools—all optimized for AI consumption with JSON output.",
-  "version": "0.6.3",
+  "description": "MCP server exposing 104+ modern CLI tools for AI agents with JSON output.",
+  "version": "0.6.5",
   "websiteUrl": "https://nacosolutions.github.io/modern-cli-mcp/",
   "repository": {
     "url": "https://github.com/NacoSolutions/modern-cli-mcp",
@@ -13,7 +13,7 @@
     {
       "registryType": "nix",
       "identifier": "github:NacoSolutions/modern-cli-mcp",
-      "version": "0.6.3",
+      "version": "0.6.5",
       "transport": {
         "type": "stdio"
       }
