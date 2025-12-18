@@ -56,7 +56,7 @@ tags:
 - [architecture] Virtual tools: src/groups.rs with ToolGroup and AgentProfile enums
 - [research] GitHub Copilot found 2-5% benchmark improvement with reduced toolsets
 ## Current Status
-**Version**: 0.6.8 (pending)
+**Version**: 0.6.8 (released)
 **Phase**: Active Development - Feature Complete
 
 ### What Works
@@ -77,17 +77,15 @@ None - feature complete.
 
 
 ## Recent Session
-- Removed MCP registry publishing from CI/CD (blocked - Nix not supported)
-- MCP registry requires packages (npm/pypi/oci) or remotes - stdio servers excluded
-- Removed mcp-publisher from devshell and pkgs.nix
-- Created backlog note in basic-memory for future re-enablement
-- server.json retained for future use
+- Released v0.6.8: CI/CD cleanup and documentation improvements
+- Added configuration docs for all install methods (AppImage, Nix Run, Nix Profile, Binary)
+- Tabbed UI for switching between config examples
+- Fixed GitHub Pages workflow for Actions deployment
 
 ## Previous Session
-- Released v0.6.7: Unified Publish Workflow + MCP Registry
-- Merged release.yml into publish.yml (single workflow)
-- Added mcp-publisher v1.4.0 to devshell (pkgs.nix derivation)
-- Cleaned up old releases (v0.6.1-v0.6.6), workflow runs, and caches
+- Removed MCP registry publishing (blocked - Nix stdio servers not supported)
+- Created backlog note in basic-memory for future re-enablement
+- server.json retained for future use when registry adds Nix support
 
 ## Previous Session
 - Released v0.6.2: CI/CD Infrastructure Fixes

@@ -8,29 +8,25 @@ tags:
 - focus
 ---
 
-- [2025-12-17] Released v0.6.7 - Unified publish workflow, MCP registry publishing working
-- [2025-12-17] Added mcp-publisher v1.4.0 to devshell for local MCP registry operations
-- [2025-12-17] Migrated CI from FlakeHub/Determinate Nix to Cachix (nacosolutions cache)
-- [2025-12-17] Removed Docker builds, unified release.yml + publish.yml workflows
-
 # Active Context: modern-cli-mcp
 
 ## Current Focus
-v0.6.8 - Removed MCP registry publishing (blocked, servers not indexed without packages/remotes)
-- Single publish.yml workflow handles: tag → release → build → AppImage → upload
-- MCP registry publishing removed (see backlog/MCP Registry Publishing Blocked in basic-memory)
+v0.6.8 released - CI/CD cleanup and documentation improvements
+- Removed MCP registry publishing (blocked - Nix not supported)
+- Added configuration docs for all install methods (AppImage, Nix Run, Nix Profile, Binary)
+- Fixed GitHub Pages workflow for Actions deployment
 
 ## Recent Events (Last 10)
-1. [2025-12-17] Removed MCP registry publishing - servers not indexed without packages/remotes
-2. [2025-12-17] Released v0.6.7 - Unified publish workflow + MCP registry publishing (blocked)
-3. [2025-12-17] Merged release.yml into publish.yml (single workflow on tag push)
-4. [2025-12-17] Fixed MCP registry: name case, description ≤100 chars, empty packages
-5. [2025-12-17] Migrated from FlakeHub to GitHub URLs, Determinate Nix to Cachix
-6. [2025-12-17] Removed Docker builds from CI (simplified, AppImage is portable alternative)
-7. [2025-12-17] Fixed AppImage build: package name match, cp -L for symlinks
-8. [2025-12-17] Evaluated fenix+crate2nix - documented as future consideration
-9. [2025-12-17] Released v0.6.0 - Dual-response mode complete
-10. [2025-12-16] Released v0.5.0 - Busybox-style CLI execution
+1. [2025-12-18] Released v0.6.8 - CI/CD cleanup, documentation improvements
+2. [2025-12-17] Added config docs for all install methods (AppImage, Nix Run, Nix Profile, Binary)
+3. [2025-12-17] Removed MCP registry publishing - Nix stdio servers not supported
+4. [2025-12-17] Fixed GitHub Pages workflow - configured for Actions deployment
+5. [2025-12-17] Released v0.6.7 - Unified publish workflow
+6. [2025-12-17] Migrated from FlakeHub to GitHub URLs, Determinate Nix to Cachix
+7. [2025-12-17] Removed Docker builds from CI (AppImage is portable alternative)
+8. [2025-12-17] Released v0.6.0 - Dual-response mode complete
+9. [2025-12-16] Released v0.5.0 - Busybox-style CLI execution
+10. [2025-12-14] Released v0.4.0 - Dynamic Toolsets & Batch Operations
 
 ## Observations
 - [decision] Cachix (nacosolutions) for Nix binary caching in GitHub Actions
